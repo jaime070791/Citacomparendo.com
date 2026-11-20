@@ -1,0 +1,188 @@
+/* ==========================================================================
+   CITA COMPARENDO - ESTILOS RESPONSIVE
+   --------------------------------------------------------------------------
+   SOLO bloques @media. Los estilos base viven en style.css (raíz del tema).
+   Convención desktop-first (max-width), igual que la plantilla koraltec.
+   ========================================================================== */
+
+/* ---------- 1199px ---------- */
+@media (max-width: 1199.98px) {
+    .hero__title {
+        font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+    }
+
+    .banner__title {
+        max-width: 22ch;
+    }
+
+    .faq__mark {
+        right: -1rem;
+        opacity: .4;
+    }
+}
+
+/* ---------- 991px ---------- */
+@media (max-width: 991.98px) {
+    .site-header__logo img,
+    .site-header__logo svg {
+        height: 44px;
+    }
+
+    .hero__photo {
+        min-height: 320px;
+    }
+
+    .hero__partners {
+        padding-block: 1rem 1.25rem;
+    }
+
+    .map {
+        height: 400px;
+    }
+
+    .faq__photo {
+        opacity: .14;
+    }
+
+    .faq__mark {
+        display: none;
+    }
+
+    .site-footer__divider {
+        display: none;
+    }
+
+    .site-footer__legal {
+        text-align: left !important;
+    }
+
+    .site-footer__logos {
+        justify-content: flex-start !important;
+    }
+}
+
+/* ---------- 767px ---------- */
+@media (max-width: 767.98px) {
+    section[id] {
+        scroll-margin-top: 80px;
+    }
+
+    .site-header .navbar-collapse {
+        background-color: var(--cita-cream);
+        border-radius: 16px;
+        padding: .75rem 1rem 1rem;
+        margin-top: .5rem;
+        box-shadow: 0 14px 30px rgba(15, 46, 90, .12);
+    }
+
+    .site-header .navbar-nav .nav-link {
+        padding-block: .5rem;
+    }
+
+    .site-header .navbar-nav .nav-link.active::after {
+        left: .85rem;
+        right: auto;
+        width: 28px;
+    }
+
+    .hero {
+        border-radius: 20px !important;
+    }
+
+    .hero__panel {
+        padding: 2rem 1.35rem 2.25rem;
+    }
+
+    .hero__note {
+        margin-bottom: 1.75rem;
+    }
+
+    .sedes__tabs {
+        border-radius: 18px;
+        width: 100%;
+    }
+
+    .stats {
+        border-radius: 22px;
+    }
+
+    .stats__title {
+        max-width: 100%;
+    }
+
+    .banner {
+        border-radius: 20px;
+    }
+
+    .banner__overlay {
+        background: linear-gradient(90deg, rgba(2, 39, 91, .95) 0%, rgba(2, 39, 91, .82) 60%, rgba(2, 39, 91, .45) 100%);
+    }
+
+    .banner__title {
+        max-width: 100%;
+    }
+
+    .cta-bar {
+        border-radius: 22px;
+    }
+
+    .site-footer {
+        text-align: center;
+    }
+
+    .site-footer__logos {
+        justify-content: center !important;
+    }
+
+    .site-footer__legal {
+        text-align: center !important;
+    }
+}
+
+/* ---------- 575px ---------- */
+@media (max-width: 575.98px) {
+    .stats__icon {
+        width: 54px;
+        height: 54px;
+        font-size: 1.35rem;
+    }
+
+    .sede-card {
+        padding: 1.15rem 1.2rem;
+    }
+
+    .testimonial-card {
+        padding: 1.2rem 1.2rem 1.35rem;
+    }
+
+    .site-footer__phone {
+        font-size: 1.35rem;
+    }
+
+    .site-footer__logos img {
+        height: 28px;
+    }
+
+    .map {
+        height: 330px;
+    }
+}
+
+/* ---------- Accesibilidad: movimiento reducido ---------- */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .js [data-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .sede-card,
+    .blog-card__img,
+    .site-header {
+        transition: none !important;
+    }
+}

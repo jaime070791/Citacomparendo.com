@@ -1,0 +1,870 @@
+/*
+Theme Name: CITA Comparendo
+Theme URI: https://citacomparendo.com/
+Author: Jhorman Gañan POD PIXEL 
+Author URI: https://citacomparendo.com/
+Description: Landing page one-page para CITA Comparendo. Construida 100% con Bootstrap 5: navbar, grid, cards, nav-pills, tabs, ratio y utilidades. Todo el CSS propio vive en este archivo y los @media en assets/css/responsive-style.css.
+Version: 1.0.0
+Requires at least: 6.4
+Tested up to: 6.8
+Requires PHP: 7.4
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: cita-comparendo
+Tags: one-column, custom-logo, custom-menu, featured-images, translation-ready
+*/
+
+/* ==========================================================================
+   1. MARCA
+   ========================================================================== */
+:root {
+    --cita-navy: #0F2E5A;
+    --cita-navy-deep: #02275B;
+    --cita-navy-soft: #2B4767;
+    --cita-yellow: #FDD701;
+    --cita-yellow-hover: #EAC800;
+    --cita-cream: #F5F5ED;
+    --cita-cream-dark: #EDEDE3;
+    --cita-ink: #161B22;
+    --cita-muted: #5A6478;
+    --cita-white: #FFFFFF;
+    --cita-whatsapp: #25D366;
+    --cita-radius: 28px;
+    --cita-radius-sm: 14px;
+    --cita-shadow: 0 18px 40px rgba(15, 46, 90, .10);
+    --cita-font-heading: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --cita-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    /* Puente con Bootstrap */
+    --bs-body-bg: var(--cita-cream);
+    --bs-body-color: var(--cita-ink);
+    --bs-body-font-family: var(--cita-font-body);
+    --bs-body-font-size: 1rem;
+    --bs-body-line-height: 1.65;
+    --bs-primary: var(--cita-navy);
+    --bs-warning: var(--cita-yellow);
+    --bs-link-color: var(--cita-navy);
+    --bs-link-hover-color: #0a2144;
+    --bs-border-radius: var(--cita-radius-sm);
+    --bs-border-color: rgba(15, 46, 90, .14);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--cita-cream);
+    color: var(--cita-ink);
+    font-family: var(--cita-font-body);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .display-1, .display-2,
+.display-3, .display-4, .display-5, .display-6 {
+    font-family: var(--cita-font-heading);
+    font-weight: 800;
+    color: var(--cita-navy);
+    letter-spacing: -.01em;
+}
+
+section[id] {
+    scroll-margin-top: 96px;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+a {
+    text-decoration: none;
+}
+
+/* ==========================================================================
+   2. UTILIDADES DE MARCA (complementan las utilidades de Bootstrap)
+   ========================================================================== */
+.bg-navy { background-color: var(--cita-navy) !important; }
+.bg-navy-deep { background-color: var(--cita-navy-deep) !important; }
+.bg-cream { background-color: var(--cita-cream) !important; }
+.bg-yellow { background-color: var(--cita-yellow) !important; }
+.text-navy { color: var(--cita-navy) !important; }
+.text-yellow { color: var(--cita-yellow) !important; }
+.text-cream { color: var(--cita-cream) !important; }
+.border-navy { border-color: var(--cita-navy) !important; }
+.fw-extrabold { font-weight: 800 !important; }
+.rounded-cita { border-radius: var(--cita-radius) !important; }
+.shadow-cita { box-shadow: var(--cita-shadow) !important; }
+.font-heading { font-family: var(--cita-font-heading) !important; }
+
+.section-py {
+    padding-top: clamp(2.5rem, 5vw, 4.5rem);
+    padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.eyebrow {
+    font-family: var(--cita-font-heading);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--cita-yellow);
+    margin-bottom: .35rem;
+}
+
+.section-title {
+    font-size: clamp(1.6rem, 3vw, 2.25rem);
+    line-height: 1.15;
+    margin-bottom: 0;
+}
+
+.section-title__line {
+    display: block;
+    height: 2px;
+    width: clamp(40px, 9vw, 180px);
+    background-color: var(--cita-yellow);
+}
+
+/* ==========================================================================
+   3. BOTONES (themados sobre las clases de Bootstrap)
+   ========================================================================== */
+.btn {
+    font-family: var(--cita-font-body);
+}
+
+.btn-warning {
+    --bs-btn-color: var(--cita-navy);
+    --bs-btn-bg: var(--cita-yellow);
+    --bs-btn-border-color: var(--cita-yellow);
+    --bs-btn-hover-color: var(--cita-navy);
+    --bs-btn-hover-bg: var(--cita-yellow-hover);
+    --bs-btn-hover-border-color: var(--cita-yellow-hover);
+    --bs-btn-active-color: var(--cita-navy);
+    --bs-btn-active-bg: var(--cita-yellow-hover);
+    --bs-btn-active-border-color: var(--cita-yellow-hover);
+    --bs-btn-disabled-color: var(--cita-navy);
+    --bs-btn-disabled-bg: var(--cita-yellow);
+    --bs-btn-disabled-border-color: var(--cita-yellow);
+    --bs-btn-font-weight: 700;
+    --bs-btn-padding-x: 1.9rem;
+    --bs-btn-padding-y: .8rem;
+    --bs-btn-font-size: 1rem;
+    --bs-btn-border-radius: 50rem;
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--cita-navy);
+    --bs-btn-border-color: var(--cita-navy);
+    --bs-btn-hover-bg: #0a2144;
+    --bs-btn-hover-border-color: #0a2144;
+    --bs-btn-active-bg: #0a2144;
+    --bs-btn-active-border-color: #0a2144;
+    --bs-btn-font-weight: 600;
+    --bs-btn-padding-x: 1.9rem;
+    --bs-btn-padding-y: .8rem;
+    --bs-btn-border-radius: 50rem;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--cita-navy);
+    --bs-btn-border-color: var(--cita-navy);
+    --bs-btn-hover-bg: var(--cita-navy);
+    --bs-btn-hover-border-color: var(--cita-navy);
+    --bs-btn-active-bg: var(--cita-navy);
+    --bs-btn-active-border-color: var(--cita-navy);
+    --bs-btn-font-weight: 600;
+    --bs-btn-padding-x: 1.9rem;
+    --bs-btn-padding-y: .7rem;
+    --bs-btn-border-radius: 50rem;
+}
+
+.btn-outline-light {
+    --bs-btn-font-weight: 600;
+    --bs-btn-padding-x: 1.9rem;
+    --bs-btn-padding-y: .7rem;
+    --bs-btn-border-radius: 50rem;
+}
+
+/* ==========================================================================
+   4. HEADER / NAVBAR
+   ========================================================================== */
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    background-color: var(--cita-cream);
+    padding-block: .55rem;
+    transition: box-shadow .25s ease, background-color .25s ease;
+}
+
+.site-header.is-scrolled {
+    box-shadow: 0 10px 30px rgba(15, 46, 90, .10);
+}
+
+.site-header__logo img,
+.site-header__logo svg {
+    height: 52px;
+    width: auto;
+    display: block;
+}
+
+.site-header .navbar-nav .nav-link {
+    color: var(--cita-navy);
+    font-weight: 600;
+    font-size: .95rem;
+    padding-inline: .85rem;
+    position: relative;
+}
+
+.site-header .navbar-nav .nav-link:hover,
+.site-header .navbar-nav .nav-link.active {
+    color: var(--cita-navy-deep);
+}
+
+.site-header .navbar-nav .nav-link.active::after {
+    content: "";
+    position: absolute;
+    left: .85rem;
+    right: .85rem;
+    bottom: .15rem;
+    height: 3px;
+    border-radius: 3px;
+    background-color: var(--cita-yellow);
+}
+
+.navbar-toggler {
+    border: 0;
+    padding: .35rem .5rem;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+.navbar-toggler .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%230F2E5A' stroke-linecap='round' stroke-width='2.5' d='M4 8h22M4 15h22M4 22h22'/%3e%3c/svg%3e");
+}
+
+/* ==========================================================================
+   5. HERO
+   ========================================================================== */
+.hero {
+    background-color: var(--cita-cream);
+    overflow: hidden;
+}
+
+.hero__panel {
+    background-color: var(--cita-navy-deep);
+    padding: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 4vw, 3.25rem);
+}
+
+.hero__title {
+    font-size: clamp(1.85rem, 3.5vw, 2.95rem);
+    line-height: 1.12;
+    color: var(--cita-white);
+    margin-bottom: 1.5rem;
+}
+
+.hero__cta {
+    --bs-btn-font-size: 1.05rem;
+    --bs-btn-padding-x: 2.6rem;
+    --bs-btn-padding-y: .85rem;
+}
+
+.hero__note {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cita-white);
+    margin-top: 1.15rem;
+    margin-bottom: 2.4rem;
+}
+
+.hero__rating {
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--cita-white);
+    margin-bottom: 0;
+}
+
+.hero__rating-line {
+    display: inline-block;
+    width: 74px;
+    height: 3px;
+    background-color: var(--cita-yellow);
+    vertical-align: middle;
+    margin-left: .75rem;
+}
+
+.hero__aside {
+    background-color: var(--cita-cream);
+}
+
+.hero__photo {
+    width: 100%;
+    min-height: 260px;
+    object-fit: cover;
+}
+
+.hero__partners {
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.hero__partners-caption {
+    font-size: .72rem;
+    line-height: 1.35;
+    color: var(--cita-navy);
+    margin-bottom: 0;
+}
+
+.hero__partners img {
+    height: 26px;
+    width: auto;
+}
+
+/* ==========================================================================
+   6. CIFRAS
+   ========================================================================== */
+.stats {
+    background-color: var(--cita-yellow);
+    border-radius: var(--cita-radius);
+    padding: clamp(1.6rem, 3vw, 2.75rem);
+}
+
+.stats__title {
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    line-height: 1.3;
+    color: var(--cita-navy);
+    max-width: 46ch;
+}
+
+.stats__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background-color: var(--cita-navy);
+    color: var(--cita-yellow);
+    font-size: 1.6rem;
+}
+
+.stats__value {
+    font-family: var(--cita-font-heading);
+    font-weight: 800;
+    font-size: clamp(1.9rem, 3.4vw, 2.75rem);
+    line-height: 1;
+    color: var(--cita-navy);
+    margin-bottom: .45rem;
+}
+
+.stats__label {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--cita-navy);
+    margin-bottom: 0;
+}
+
+/* ==========================================================================
+   7. SEDES Y HORARIOS
+   ========================================================================== */
+.sedes__tabs {
+    background-color: var(--cita-navy);
+    border-radius: 50rem;
+    padding: .4rem;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.sedes__tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.sedes__tabs .nav-link {
+    color: var(--cita-white);
+    font-weight: 600;
+    font-size: .9rem;
+    border-radius: 50rem;
+    padding: .45rem 1rem;
+    white-space: nowrap;
+}
+
+.sedes__tabs .nav-link:hover {
+    color: var(--cita-yellow);
+}
+
+.sedes__tabs .nav-link.active {
+    background-color: var(--cita-yellow);
+    color: var(--cita-navy);
+}
+
+.sede-card {
+    background-color: var(--cita-white);
+    border-radius: var(--cita-radius-sm);
+    padding: 1.35rem 1.5rem;
+    height: 100%;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.sede-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--cita-shadow);
+}
+
+.sede-card.is-active {
+    background-color: var(--cita-yellow);
+}
+
+.sede-card__name {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--cita-navy);
+    margin-bottom: .6rem;
+}
+
+.sede-card__meta {
+    font-size: .9rem;
+    color: var(--cita-navy-soft);
+    margin-bottom: .2rem;
+}
+
+.sede-card .btn {
+    --bs-btn-padding-y: .45rem;
+    --bs-btn-padding-x: 1.5rem;
+    --bs-btn-font-size: .9rem;
+}
+
+.map {
+    height: clamp(320px, 42vw, 480px);
+    border-radius: var(--cita-radius-sm);
+    overflow: hidden;
+    background-color: var(--cita-cream-dark);
+    z-index: 0;
+}
+
+.map__fallback {
+    height: 100%;
+    background-color: var(--cita-cream-dark);
+}
+
+.leaflet-container {
+    font-family: var(--cita-font-body);
+}
+
+/* ==========================================================================
+   8. BANNER INSTALACIONES
+   ========================================================================== */
+.banner {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--cita-radius);
+}
+
+.banner__img {
+    width: 100%;
+    height: clamp(260px, 34vw, 420px);
+    object-fit: cover;
+    display: block;
+}
+
+.banner__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(2, 39, 91, .92) 0%, rgba(2, 39, 91, .65) 45%, rgba(2, 39, 91, 0) 75%);
+}
+
+.banner__content {
+    position: absolute;
+    inset: 0;
+    padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.banner__title {
+    color: var(--cita-white);
+    font-size: clamp(1.4rem, 2.6vw, 2rem);
+    line-height: 1.2;
+    max-width: 18ch;
+    margin-bottom: 1.5rem;
+}
+
+/* ==========================================================================
+   9. CÓMO FUNCIONA
+   ========================================================================== */
+.section--steps {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--cita-navy);
+    background-image: radial-gradient(circle at 85% 15%, rgba(253, 215, 1, .10), transparent 45%);
+}
+
+.steps__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: .18;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.section--steps .section-title,
+.section--steps h2 {
+    color: var(--cita-white);
+}
+
+.step-card {
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 12px;
+    padding: 1.75rem 1.5rem;
+    height: 100%;
+    background-color: rgba(255, 255, 255, .02);
+}
+
+.step-card__icon {
+    font-size: 2.1rem;
+    color: var(--cita-yellow);
+    line-height: 1;
+}
+
+.step-card__title {
+    color: var(--cita-white);
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.3;
+    margin-block: 1rem .9rem;
+}
+
+.step-card__divider {
+    height: 2px;
+    background-color: var(--cita-yellow);
+    width: 100%;
+    margin-bottom: .9rem;
+}
+
+.step-card__text {
+    color: rgba(255, 255, 255, .82);
+    font-size: .92rem;
+    line-height: 1.6;
+    margin-bottom: 0;
+}
+
+/* ==========================================================================
+   10. TESTIMONIOS
+   ========================================================================== */
+.testimonial-card {
+    background-color: var(--cita-white);
+    border-radius: 18px;
+    padding: 1.4rem 1.4rem 1.6rem;
+    height: 100%;
+    box-shadow: 0 12px 26px rgba(15, 46, 90, .06);
+}
+
+.testimonial-card__icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    background-color: var(--cita-navy);
+    color: var(--cita-yellow);
+    font-size: 1.05rem;
+}
+
+.testimonial-card__rating {
+    font-family: var(--cita-font-heading);
+    font-weight: 800;
+    color: var(--cita-navy);
+    font-size: .95rem;
+}
+
+.testimonial-card__text {
+    font-size: .92rem;
+    line-height: 1.6;
+    color: var(--cita-ink);
+    margin-block: 1rem 1.4rem;
+}
+
+.testimonial-card__name {
+    font-weight: 800;
+    font-size: .92rem;
+    color: var(--cita-navy);
+    margin-bottom: 0;
+}
+
+.testimonial-card__role {
+    font-size: .8rem;
+    color: var(--cita-muted);
+    margin-bottom: 0;
+}
+
+.cta-bar {
+    background-color: var(--cita-yellow);
+    border-radius: 50rem;
+    padding: clamp(1rem, 2vw, 1.35rem) clamp(1.25rem, 4vw, 3.5rem);
+}
+
+.cta-bar__text {
+    font-size: clamp(1.05rem, 2.1vw, 1.5rem);
+    font-weight: 700;
+    color: var(--cita-navy);
+    margin-bottom: 0;
+}
+
+/* ==========================================================================
+   11. FAQ
+   ========================================================================== */
+.section--faq {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--cita-navy);
+}
+
+.section--faq .section-title {
+    color: var(--cita-white);
+}
+
+.faq__photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: .22;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.faq__mark {
+    position: absolute;
+    right: .5rem;
+    bottom: -3.5rem;
+    font-family: var(--cita-font-heading);
+    font-weight: 800;
+    font-size: clamp(11rem, 26vw, 22rem);
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 3px var(--cita-yellow);
+    opacity: .55;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.faq__list {
+    border-top: 1px solid rgba(255, 255, 255, .22);
+}
+
+.faq__question {
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .22);
+    color: rgba(255, 255, 255, .72);
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.35;
+    padding-block: 1.05rem;
+    padding-inline: 0;
+    width: 100%;
+    transition: color .2s ease;
+}
+
+.faq__question:hover {
+    color: var(--cita-white);
+}
+
+.faq__question.active {
+    color: var(--cita-yellow);
+}
+
+.faq__question:focus-visible {
+    outline: 2px solid var(--cita-yellow);
+    outline-offset: 3px;
+}
+
+.faq__answer {
+    color: var(--cita-white);
+    font-size: clamp(1rem, 1.6vw, 1.2rem);
+    line-height: 1.65;
+}
+
+/* ==========================================================================
+   12. BLOG
+   ========================================================================== */
+.blog-card {
+    height: 100%;
+}
+
+.blog-card__media {
+    position: relative;
+    border-radius: var(--cita-radius-sm);
+    overflow: hidden;
+}
+
+.blog-card__img {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    display: block;
+    transition: transform .35s ease;
+}
+
+.blog-card:hover .blog-card__img {
+    transform: scale(1.03);
+}
+
+.blog-card__badge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--cita-yellow);
+    color: var(--cita-navy);
+    font-family: var(--cita-font-heading);
+    font-weight: 800;
+    font-size: .98rem;
+    line-height: 1.25;
+    padding: .85rem 1rem;
+}
+
+.blog-card__excerpt {
+    font-size: .95rem;
+    color: var(--cita-ink);
+    margin-block: .9rem .8rem;
+}
+
+.blog-card__link {
+    font-weight: 700;
+    color: var(--cita-navy);
+}
+
+.blog-card__link:hover {
+    color: var(--cita-navy-deep);
+}
+
+/* ==========================================================================
+   13. FOOTER
+   ========================================================================== */
+.site-footer {
+    background-color: var(--cita-navy);
+    color: var(--cita-white);
+    padding-block: clamp(2.5rem, 5vw, 4rem) clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.site-footer a {
+    color: var(--cita-white);
+}
+
+.site-footer__logo-chip {
+    display: inline-block;
+    padding: .55rem .85rem;
+    background-color: var(--cita-white);
+    border-radius: 14px;
+}
+
+.site-footer__logo {
+    height: 56px;
+    width: auto;
+    display: block;
+}
+
+.site-footer__link {
+    color: var(--cita-white);
+    font-weight: 600;
+    font-size: .95rem;
+}
+
+.site-footer__link:hover {
+    color: var(--cita-yellow);
+}
+
+.site-footer__phone {
+    font-family: var(--cita-font-heading);
+    font-weight: 800;
+    font-size: clamp(1.4rem, 2.6vw, 2rem);
+    color: var(--cita-white);
+}
+
+.site-footer__whatsapp {
+    display: inline-block;
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    text-align: center;
+    border-radius: 50%;
+    background-color: var(--cita-whatsapp);
+    color: var(--cita-white) !important;
+    font-size: 1.3rem;
+}
+
+.site-footer__divider {
+    width: 1px;
+    min-height: 72px;
+    background-color: rgba(255, 255, 255, .28);
+}
+
+.site-footer__legal {
+    font-size: .8rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, .85);
+    margin-bottom: .75rem;
+}
+
+.site-footer__logos img {
+    height: 34px;
+    width: auto;
+    background-color: var(--cita-white);
+    border-radius: 4px;
+    padding: 4px 6px;
+}
+
+/* ==========================================================================
+   14. PÁGINAS INTERNAS (page, single, archive, 404)
+   ========================================================================== */
+.page-hero {
+    background-color: var(--cita-navy);
+    color: var(--cita-white);
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+}
+
+.page-hero h1 {
+    color: var(--cita-white);
+    font-size: clamp(1.7rem, 3vw, 2.5rem);
+}
+
+.entry-content h2,
+.entry-content h3 {
+    margin-top: 2rem;
+}
+
+.entry-content img {
+    border-radius: var(--cita-radius-sm);
+}
+
+.blog-list .card {
+    border: 0;
+    border-radius: var(--cita-radius-sm);
+    overflow: hidden;
+    height: 100%;
+    box-shadow: 0 10px 24px rgba(15, 46, 90, .07);
+}
+
+.pagination .page-item .page-link {
+    color: var(--cita-navy);
+    border-color: rgba(15, 46, 90, .15);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--cita-navy);
+    border-color: var(--cita-navy);
+    color: var(--cita-white);
+}
+
+/* ==========================================================================
+   15. ANIMACIONES DE ENTRADA (data-reveal)
+   ========================================================================== */
+.js [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .65s ease, transform .65s ease;
+    transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js [data-reveal].is-revealed {
+    opacity: 1;
+    transform: none;
+}
