@@ -207,16 +207,30 @@ function cita_comparendo_limpiar_texto($valor, $multilinea = false)
  * @param string $nombre   Nombre limpio de la ciudad.
  * @return int|WP_Error ID del término.
  */
-function cita_comparendo_upsert_ciudad(array $ubicacion, $nombre)
+/**
+ * Crea o actualiza un término de taxonomía con sus metadatos de mapa.
+ *
+ * @param string $taxonomy Taxonomía registrada.
+ * @param string $nombre   Nombre del término.
+ * @param array  $meta     latitud, longitud, nivel_zoom, estado.
+ * @return array|WP_Error ['term_id' => int, 'action' => 'created'|'updated']
+ */
+function cita_comparendo_upsert_termino($taxonomy, $nombre, array $meta = array())
 {
-    $nombre = sanitize_text_field($nombre);
+    $taxonomy = sanitize_key($taxonomy);
+    $nombre = sanitize_text_field((string) $nombre);
 
-    if ('' === $nombre) {
-        return new WP_Error('cita_sync_ciudad', __('La ciudad no tiene nombre.', 'cita-comparendo'));
+    if ('' === $taxonomy || ! taxonomy_exists($taxonomy)) {
+        return new WP_Error('cita_termino_taxonomia', __('La taxonomía no existe.', 'cita-comparendo'));
     }
 
-    $existente = term_exists($nombre, 'ciudad');
+    if ('' === $nombre) {
+        return new WP_Error('cita_termino_nombre', __('El término no tiene nombre.', 'cita-comparendo'));
+    }
+
+    $existente = term_exists($nombre, $taxonomy);
     $term_id = 0;
+    $action = 'updated';
 
     if (is_array($existente) && isset($existente['term_id'])) {
         $term_id = (int) $existente['term_id'];
@@ -225,13 +239,13 @@ function cita_comparendo_upsert_ciudad(array $ubicacion, $nombre)
     } elseif (is_object($existente) && isset($existente->term_id)) {
         $term_id = (int) $existente->term_id;
     } else {
-        $creado = wp_insert_term($nombre, 'ciudad', array('slug' => sanitize_title($nombre)));
+        $creado = wp_insert_term($nombre, $taxonomy, array('slug' => sanitize_title($nombre)));
 
         if (is_wp_error($creado)) {
-            // Ciudad con el mismo slug pero otro nombre (tildes, mayúsculas):
-            // reutilizamos el término existente en vez de perder la asignación.
+            // Mismo slug con otro nombre (tildes, mayúsculas): reutilizamos.
             if ('term_exists' === $creado->get_error_code()) {
                 $datos = $creado->get_error_data();
+
                 if (is_array($datos) && isset($datos['term_id'])) {
                     $term_id = (int) $datos['term_id'];
                 } elseif (is_numeric($datos)) {
@@ -244,41 +258,364 @@ function cita_comparendo_upsert_ciudad(array $ubicacion, $nombre)
             }
         } else {
             $term_id = (int) $creado['term_id'];
+            $action = 'created';
         }
     }
 
-    $lat = cita_comparendo_normalizar_coordenada(
-        isset($ubicacion['latitud_ubicacion']) ? $ubicacion['latitud_ubicacion'] : (isset($ubicacion['lat']) ? $ubicacion['lat'] : ''),
-        'lat'
+    if (isset($meta['latitud'])) {
+        $lat = cita_comparendo_normalizar_coordenada($meta['latitud'], 'lat');
+
+        if ('' !== $lat) {
+            update_term_meta($term_id, 'latitud', $lat);
+        }
+    }
+
+    if (isset($meta['longitud'])) {
+        $lng = cita_comparendo_normalizar_coordenada($meta['longitud'], 'lng');
+
+        if ('' !== $lng) {
+            update_term_meta($term_id, 'longitud', $lng);
+        }
+    }
+
+    if (isset($meta['nivel_zoom']) && is_scalar($meta['nivel_zoom']) && '' !== $meta['nivel_zoom']) {
+        $zoom = (int) $meta['nivel_zoom'];
+
+        if ($zoom > 0) {
+            update_term_meta($term_id, 'nivel_zoom', (string) max(1, min(20, $zoom)));
+        }
+    }
+
+    if (isset($meta['estado']) && is_scalar($meta['estado'])) {
+        $estado = sanitize_text_field((string) $meta['estado']);
+
+        if ('' !== $estado) {
+            update_term_meta($term_id, 'estado', $estado);
+        }
+    }
+
+    return array(
+        'term_id' => $term_id,
+        'action'  => $action,
     );
-    $lng = cita_comparendo_normalizar_coordenada(
-        isset($ubicacion['longitud_ubicacion']) ? $ubicacion['longitud_ubicacion'] : (isset($ubicacion['lng']) ? $ubicacion['lng'] : ''),
-        'lng'
+}
+
+/**
+ * Crea o actualiza una sede con datos del CRM (mismo código para push y pull).
+ *
+ * Identidad: `_sede_id_api` y, por compatibilidad, `complemento_iframe`. Al
+ * guardar se escriben ambos. Nunca se tocan `post_name` ni `post_content`.
+ *
+ * @param array $datos Datos normalizados:
+ *                     id_api, id_empresa, titulo, direccion, horario, telefono,
+ *                     barrio, url_video, url_imagen, lat, lng,
+ *                     estado_sede_motor, whatsapp, price_range, schema_type,
+ *                     ciudad (array nombre/latitud/longitud/nivel_zoom/estado),
+ *                     localidad (igual), ciudad_term_id, localidad_term_id.
+ * @return array Resultado con success, action, id, message, reason, estado,
+ *               incompleta, reactivated, deactivated, warning, ciudad, localidad.
+ */
+function cita_comparendo_upsert_sede(array $datos)
+{
+    $resultado = array(
+        'success'     => false,
+        'action'      => 'skipped',
+        'id'          => 0,
+        'message'     => '',
+        'reason'      => '',
+        'estado'      => '',
+        'incompleta'  => false,
+        'reactivated' => false,
+        'deactivated' => false,
+        'warning'     => '',
+        'ciudad'      => null,
+        'localidad'   => null,
     );
+
+    $id_api = isset($datos['id_api']) && is_scalar($datos['id_api'])
+        ? trim(sanitize_text_field((string) $datos['id_api']))
+        : '';
+
+    $titulo = isset($datos['titulo']) ? cita_comparendo_limpiar_texto($datos['titulo']) : '';
+
+    if ('' === $id_api) {
+        $resultado['reason'] = 'sin_id';
+        $resultado['message'] = sprintf(
+            /* translators: %s: título de la sede. */
+            __('Sede "%s" sin identificador del CRM: no se sincroniza.', 'cita-comparendo'),
+            $titulo
+        );
+
+        return $resultado;
+    }
+
+    if ('' === $titulo) {
+        $titulo = 'Sede ' . $id_api;
+    }
+
+    $advertencias = array();
+
+    // Ciudad y localidad (términos + term meta).
+    $ciudad_res = null;
+    if (! empty($datos['ciudad_term_id'])) {
+        $ciudad_res = array('term_id' => (int) $datos['ciudad_term_id'], 'action' => 'updated');
+    } elseif (isset($datos['ciudad']) && is_array($datos['ciudad']) && ! empty($datos['ciudad']['nombre'])) {
+        $ciudad_res = cita_comparendo_upsert_termino('ciudad', $datos['ciudad']['nombre'], $datos['ciudad']);
+    }
+
+    if (is_wp_error($ciudad_res)) {
+        $advertencias[] = sprintf(
+            /* translators: %s: mensaje de error. */
+            __('Ciudad: %s', 'cita-comparendo'),
+            $ciudad_res->get_error_message()
+        );
+        $ciudad_res = null;
+    }
+
+    $localidad_res = null;
+    if (! empty($datos['localidad_term_id'])) {
+        $localidad_res = array('term_id' => (int) $datos['localidad_term_id'], 'action' => 'updated');
+    } elseif (isset($datos['localidad']) && is_array($datos['localidad']) && ! empty($datos['localidad']['nombre'])) {
+        $localidad_res = cita_comparendo_upsert_termino('localidad', $datos['localidad']['nombre'], $datos['localidad']);
+    }
+
+    if (is_wp_error($localidad_res)) {
+        $advertencias[] = sprintf(
+            /* translators: %s: mensaje de error. */
+            __('Localidad: %s', 'cita-comparendo'),
+            $localidad_res->get_error_message()
+        );
+        $localidad_res = null;
+    }
+
+    // Identidad: primero `_sede_id_api`, luego `complemento_iframe`.
+    $estados_post = array('publish', 'draft', 'pending', 'private', 'future');
+    $post_id = 0;
+
+    $por_api = get_posts(array(
+        'post_type'      => 'sede',
+        'post_status'    => $estados_post,
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'meta_key'       => '_sede_id_api',
+        'meta_value'     => $id_api,
+        'orderby'        => 'ID',
+        'order'          => 'ASC',
+    ));
+
+    if (! empty($por_api)) {
+        $post_id = (int) $por_api[0];
+
+        if (count($por_api) > 1) {
+            $advertencias[] = sprintf(
+                /* translators: 1: sede, 2: número de registros, 3: id CRM, 4: id actualizado. */
+                __('Sede "%1$s": %2$d registros con _sede_id_api "%3$s"; se actualiza el más antiguo (#%4$d).', 'cita-comparendo'),
+                $titulo,
+                count($por_api),
+                $id_api,
+                $post_id
+            );
+        }
+    } else {
+        $por_iframe = cita_comparendo_buscar_sedes_por_crm($id_api);
+
+        if (! empty($por_iframe)) {
+            $post_id = (int) $por_iframe[0];
+
+            if (count($por_iframe) > 1) {
+                $advertencias[] = sprintf(
+                    /* translators: 1: sede, 2: número de registros, 3: id CRM, 4: id actualizado. */
+                    __('Sede "%1$s": %2$d registros con complemento_iframe "%3$s"; se actualiza el más antiguo (#%4$d).', 'cita-comparendo'),
+                    $titulo,
+                    count($por_iframe),
+                    $id_api,
+                    $post_id
+                );
+            }
+        }
+    }
+
+    $es_nueva = (0 === $post_id);
+
+    $lat = cita_comparendo_normalizar_coordenada(isset($datos['lat']) ? $datos['lat'] : '', 'lat');
+    $lng = cita_comparendo_normalizar_coordenada(isset($datos['lng']) ? $datos['lng'] : '', 'lng');
+    $direccion = cita_comparendo_limpiar_texto(isset($datos['direccion']) ? $datos['direccion'] : '');
+    $incompleta = ('' === $lat || '' === $lng || '' === $direccion);
+
+    $estado_actual = $es_nueva ? '' : (string) get_post_status($post_id);
+    $publicada_por_sync = $es_nueva ? '' : (string) get_post_meta($post_id, '_cita_sync_publicada', true);
+
+    // Estado objetivo: null = no tocar el post_status.
+    $nuevo_estado = null;
+    $marcar_publicada = null;
+
+    if ($es_nueva) {
+        $nuevo_estado = $incompleta ? 'draft' : 'publish';
+        $marcar_publicada = $incompleta ? '0' : '1';
+    } elseif ('publish' === $estado_actual) {
+        // Nunca se despublica una sede que ya estaba publicada.
+        $nuevo_estado = null;
+    } elseif (in_array($estado_actual, array('draft', 'pending', 'private'), true)) {
+        // Solo se republica si el propio sync la publicó antes.
+        if (! $incompleta && '1' === $publicada_por_sync) {
+            $nuevo_estado = 'publish';
+            $marcar_publicada = '1';
+        }
+    }
+
+    $reactivado = false;
+
+    if ($es_nueva) {
+        $post_id = wp_insert_post(wp_slash(array(
+            'post_title'  => $titulo,
+            'post_type'   => 'sede',
+            'post_status' => $nuevo_estado,
+        )), true);
+
+        if (is_wp_error($post_id)) {
+            $resultado['reason'] = 'error';
+            $resultado['message'] = sprintf(
+                /* translators: 1: sede, 2: mensaje de error. */
+                __('Sede "%1$s": %2$s', 'cita-comparendo'),
+                $titulo,
+                $post_id->get_error_message()
+            );
+
+            return $resultado;
+        }
+
+        $post_id = (int) $post_id;
+        $action = 'created';
+    } else {
+        $datos_post = array(
+            'ID'         => $post_id,
+            'post_title' => $titulo,
+        );
+
+        if (null !== $nuevo_estado) {
+            $datos_post['post_status'] = $nuevo_estado;
+        }
+
+        $actualizado = wp_update_post(wp_slash($datos_post), true);
+
+        if (is_wp_error($actualizado)) {
+            $resultado['reason'] = 'error';
+            $resultado['message'] = sprintf(
+                /* translators: 1: sede, 2: mensaje de error. */
+                __('Sede "%1$s": %2$s', 'cita-comparendo'),
+                $titulo,
+                $actualizado->get_error_message()
+            );
+
+            return $resultado;
+        }
+
+        $action = 'updated';
+        $reactivado = ('publish' === $nuevo_estado);
+    }
+
+    if (null !== $marcar_publicada) {
+        update_post_meta($post_id, '_cita_sync_publicada', $marcar_publicada);
+    }
+
+    // Meta de texto.
+    foreach (array('direccion', 'horario', 'telefono', 'barrio', 'price_range', 'schema_type') as $clave) {
+        $valor = cita_comparendo_limpiar_texto(
+            isset($datos[$clave]) ? $datos[$clave] : '',
+            'horario' === $clave
+        );
+
+        if ('' !== $valor) {
+            update_post_meta($post_id, $clave, $valor);
+        }
+    }
+
+    // URLs.
+    foreach (array('url_video', 'url_imagen') as $clave) {
+        $valor = isset($datos[$clave]) && is_scalar($datos[$clave])
+            ? esc_url_raw(trim((string) $datos[$clave]))
+            : '';
+
+        if ('' !== $valor) {
+            update_post_meta($post_id, $clave, $valor);
+        }
+    }
+
+    // WhatsApp (solo dígitos y +).
+    $whatsapp = isset($datos['whatsapp']) && is_scalar($datos['whatsapp'])
+        ? preg_replace('/[^0-9+]/', '', (string) $datos['whatsapp'])
+        : '';
+
+    if ('' !== $whatsapp) {
+        update_post_meta($post_id, 'whatsapp', $whatsapp);
+    }
 
     if ('' !== $lat) {
-        update_term_meta($term_id, 'latitud', $lat);
+        update_post_meta($post_id, 'lat', $lat);
     }
+
     if ('' !== $lng) {
-        update_term_meta($term_id, 'longitud', $lng);
+        update_post_meta($post_id, 'lng', $lng);
     }
 
-    $zoom = null;
-    if (isset($ubicacion['nivel_zoom']) && '' !== $ubicacion['nivel_zoom']) {
-        $zoom = (int) $ubicacion['nivel_zoom'];
-    } elseif (isset($ubicacion['zoom']) && '' !== $ubicacion['zoom']) {
-        $zoom = (int) $ubicacion['zoom'];
-    }
-    if (null !== $zoom && $zoom > 0) {
-        update_term_meta($term_id, 'nivel_zoom', (string) max(1, min(20, $zoom)));
+    if (isset($datos['id_empresa']) && is_scalar($datos['id_empresa']) && (int) $datos['id_empresa'] > 0) {
+        update_post_meta($post_id, '_sede_id_empresa', (int) $datos['id_empresa']);
     }
 
-    $estado = cita_comparendo_limpiar_texto(isset($ubicacion['estado']) ? $ubicacion['estado'] : '');
-    if ('' !== $estado) {
-        update_term_meta($term_id, 'estado', $estado);
+    // Identidad en ambos metas (compatibilidad push/pull).
+    update_post_meta($post_id, '_sede_id_api', $id_api);
+    update_post_meta($post_id, 'complemento_iframe', $id_api);
+
+    // Estado: activo/inactivo explícitos se escriben siempre. Vacío o
+    // desconocido solo se resuelve a Activo en sedes nuevas: en una existente
+    // no se toca, para no reactivar una sede cerrada a mano.
+    $estado_norm = cita_comparendo_estado_normalizado(isset($datos['estado_sede_motor']) ? $datos['estado_sede_motor'] : '');
+    $estado_previo = (string) get_post_meta($post_id, 'estado_sede_motor', true);
+    $desactivado = false;
+
+    if ('inactivo' === $estado_norm) {
+        update_post_meta($post_id, 'estado_sede_motor', 'Inactivo');
+        $desactivado = ! cita_comparendo_estado_inactivo($estado_previo);
+    } elseif ('activo' === $estado_norm || $es_nueva) {
+        update_post_meta($post_id, 'estado_sede_motor', 'Activo');
     }
 
-    return $term_id;
+    // Términos (reemplazan los anteriores).
+    if (! empty($ciudad_res['term_id'])) {
+        wp_set_object_terms($post_id, array((int) $ciudad_res['term_id']), 'ciudad', false);
+    }
+
+    if (! empty($localidad_res['term_id'])) {
+        wp_set_object_terms($post_id, array((int) $localidad_res['term_id']), 'localidad', false);
+    }
+
+    $estado_final = (string) get_post_status($post_id);
+    $mensaje = '';
+
+    if ($incompleta) {
+        $mensaje = sprintf(
+            'publish' === $estado_final
+                ? __('Sede "%s" sin dirección o coordenadas: se mantiene publicada.', 'cita-comparendo')
+                : __('Sede "%s" sin dirección o coordenadas: queda en borrador.', 'cita-comparendo'),
+            $titulo
+        );
+    }
+
+    return array(
+        'success'     => true,
+        'action'      => $action,
+        'id'          => $post_id,
+        'message'     => $mensaje,
+        'reason'      => '',
+        'estado'      => $estado_final,
+        'incompleta'  => $incompleta,
+        'reactivated' => $reactivado,
+        'deactivated' => $desactivado,
+        'warning'     => implode(' ', $advertencias),
+        'ciudad'      => $ciudad_res,
+        'localidad'   => $localidad_res,
+    );
 }
 
 /**
@@ -384,15 +721,22 @@ function cita_comparendo_sync_aplicar($ubicaciones, $opciones = array())
             continue;
         }
 
-        $term_id = cita_comparendo_upsert_ciudad($ubicacion, $nombre_ciudad);
-        if (is_wp_error($term_id)) {
+        $ciudad_res = cita_comparendo_upsert_termino('ciudad', $nombre_ciudad, array(
+            'latitud'    => isset($ubicacion['latitud_ubicacion']) ? $ubicacion['latitud_ubicacion'] : (isset($ubicacion['lat']) ? $ubicacion['lat'] : ''),
+            'longitud'   => isset($ubicacion['longitud_ubicacion']) ? $ubicacion['longitud_ubicacion'] : (isset($ubicacion['lng']) ? $ubicacion['lng'] : ''),
+            'nivel_zoom' => isset($ubicacion['nivel_zoom']) ? $ubicacion['nivel_zoom'] : (isset($ubicacion['zoom']) ? $ubicacion['zoom'] : ''),
+            'estado'     => isset($ubicacion['estado']) ? $ubicacion['estado'] : '',
+        ));
+
+        $term_id = is_wp_error($ciudad_res) ? 0 : (int) $ciudad_res['term_id'];
+
+        if (0 === $term_id) {
             $registrar_error(sprintf(
                 /* translators: 1: ciudad, 2: mensaje de error. */
                 __('Ciudad "%1$s": %2$s', 'cita-comparendo'),
                 $nombre_ciudad,
-                $term_id->get_error_message()
+                is_wp_error($ciudad_res) ? $ciudad_res->get_error_message() : __('no se pudo crear el término.', 'cita-comparendo')
             ));
-            $term_id = 0;
         }
 
         $tiendas = isset($ubicacion['tab_ubicacion']) && is_array($ubicacion['tab_ubicacion'])
@@ -439,173 +783,52 @@ function cita_comparendo_sync_aplicar($ubicaciones, $opciones = array())
                 continue;
             }
 
-            $coincidencias = cita_comparendo_buscar_sedes_por_crm($crm_id);
-            $existente = ! empty($coincidencias) ? (int) $coincidencias[0] : 0;
-            $es_nueva = (0 === $existente);
+            // Misma función que usa el receptor push (sin duplicar lógica).
+            $res = cita_comparendo_upsert_sede(array(
+                'id_api'             => $crm_id,
+                'titulo'             => $titulo,
+                'direccion'          => isset($tienda['direccion']) ? $tienda['direccion'] : '',
+                'horario'            => isset($tienda['horario']) ? $tienda['horario'] : '',
+                'telefono'           => isset($tienda['telefono']) ? $tienda['telefono'] : '',
+                'lat'                => isset($tienda['lat']) ? $tienda['lat'] : (isset($tienda['latitud_tienda']) ? $tienda['latitud_tienda'] : ''),
+                'lng'                => isset($tienda['lng']) ? $tienda['lng'] : (isset($tienda['longitud_tienda']) ? $tienda['longitud_tienda'] : ''),
+                'estado_sede_motor'  => isset($tienda['estado_sede_motor']) ? $tienda['estado_sede_motor'] : '',
+                'price_range'        => isset($tienda['price_range']) ? $tienda['price_range'] : '',
+                'schema_type'        => isset($tienda['schema_type']) ? $tienda['schema_type'] : '',
+                'ciudad_term_id'     => $term_id ? (int) $term_id : 0,
+            ));
 
-            if (count($coincidencias) > 1) {
-                $registrar_error(sprintf(
-                    /* translators: 1: sede, 2: número de registros, 3: id CRM, 4: id del post actualizado. */
-                    __('Sede "%1$s": %2$d registros con complemento_iframe "%3$s"; se actualiza la más antigua (#%4$d).', 'cita-comparendo'),
-                    $titulo,
-                    count($coincidencias),
-                    $crm_id,
-                    $existente
-                ));
+            if (! $res['success']) {
+                if ('sin_id' === $res['reason']) {
+                    $stats['omitidas']++;
+                }
+
+                $registrar_error($res['message']);
+                continue;
             }
 
-            // Una sede sin coordenadas válidas o sin dirección queda incompleta.
-            $lat = cita_comparendo_normalizar_coordenada(
-                isset($tienda['lat']) ? $tienda['lat'] : (isset($tienda['latitud_tienda']) ? $tienda['latitud_tienda'] : ''),
-                'lat'
-            );
-            $lng = cita_comparendo_normalizar_coordenada(
-                isset($tienda['lng']) ? $tienda['lng'] : (isset($tienda['longitud_tienda']) ? $tienda['longitud_tienda'] : ''),
-                'lng'
-            );
-            $direccion = cita_comparendo_limpiar_texto(isset($tienda['direccion']) ? $tienda['direccion'] : '');
-            $incompleta = ('' === $lat || '' === $lng || '' === $direccion);
-
-            $estado_actual = $es_nueva ? '' : (string) get_post_status($existente);
-            $publicada_por_sync = $es_nueva ? '' : (string) get_post_meta($existente, '_cita_sync_publicada', true);
-
-            // Estado objetivo: null = no tocar el post_status.
-            $nuevo_estado = null;
-            $marcar_publicada = null;
-
-            if ($es_nueva) {
-                $nuevo_estado = $incompleta ? 'draft' : 'publish';
-                $marcar_publicada = $incompleta ? '0' : '1';
-            } elseif ('publish' === $estado_actual) {
-                // Nunca se despublica una sede que ya estaba publicada.
-                $nuevo_estado = null;
-            } elseif (in_array($estado_actual, array('draft', 'pending', 'private'), true)) {
-                // Solo se republica si el propio sync la publicó antes.
-                if (! $incompleta && '1' === $publicada_por_sync) {
-                    $nuevo_estado = 'publish';
-                    $marcar_publicada = '1';
-                }
+            if ('' !== $res['warning']) {
+                $registrar_error($res['warning']);
             }
 
-            if ($es_nueva) {
-                $post_id = wp_insert_post(wp_slash(array(
-                    'post_title'  => $titulo,
-                    'post_type'   => 'sede',
-                    'post_status' => $nuevo_estado,
-                )), true);
-
-                if (is_wp_error($post_id)) {
-                    $registrar_error(sprintf(
-                        /* translators: 1: sede, 2: mensaje de error. */
-                        __('Sede "%1$s": %2$s', 'cita-comparendo'),
-                        $titulo,
-                        $post_id->get_error_message()
-                    ));
-                    continue;
-                }
-
-                $post_id = (int) $post_id;
-
-                if (null !== $marcar_publicada) {
-                    update_post_meta($post_id, '_cita_sync_publicada', $marcar_publicada);
-                }
-            } else {
-                $post_id = $existente;
-
-                $datos_post = array(
-                    'ID'         => $post_id,
-                    'post_title' => $titulo,
-                );
-
-                if (null !== $nuevo_estado) {
-                    $datos_post['post_status'] = $nuevo_estado;
-                }
-
-                $actualizado = wp_update_post(wp_slash($datos_post), true);
-
-                if (is_wp_error($actualizado)) {
-                    $registrar_error(sprintf(
-                        /* translators: 1: sede, 2: mensaje de error. */
-                        __('Sede "%1$s": %2$s', 'cita-comparendo'),
-                        $titulo,
-                        $actualizado->get_error_message()
-                    ));
-                    continue;
-                }
-
-                if (null !== $marcar_publicada) {
-                    update_post_meta($post_id, '_cita_sync_publicada', $marcar_publicada);
-                }
-
-                if ('publish' === $nuevo_estado) {
-                    $stats['reactivated']++;
-                }
-            }
-
-            $estado_final = (string) get_post_status($post_id);
-
-            if ('draft' === $estado_final) {
+            if ('draft' === $res['estado']) {
                 $stats['borradores']++;
             }
 
-            if ($incompleta) {
-                $registrar_error(sprintf(
-                    'publish' === $estado_final
-                        ? __('Sede "%s" sin dirección o coordenadas: se mantiene publicada.', 'cita-comparendo')
-                        : __('Sede "%s" sin dirección o coordenadas: queda en borrador.', 'cita-comparendo'),
-                    $titulo
-                ));
-            } elseif ($es_nueva) {
+            if ($res['incompleta']) {
+                $registrar_error($res['message']);
+            } elseif ('created' === $res['action']) {
                 $stats['created']++;
             } else {
                 $stats['updated']++;
             }
 
-            if ($term_id) {
-                wp_set_object_terms($post_id, array($term_id), 'ciudad', false);
+            if ($res['reactivated']) {
+                $stats['reactivated']++;
             }
 
-            $meta_texto = array(
-                'direccion'          => 'direccion',
-                'horario'            => 'horario',
-                'telefono'           => 'telefono',
-                'complemento_iframe' => 'complemento_iframe',
-                'price_range'        => 'price_range',
-                'schema_type'        => 'schema_type',
-            );
-
-            foreach ($meta_texto as $campo => $clave_api) {
-                $valor = cita_comparendo_limpiar_texto(
-                    isset($tienda[$clave_api]) ? $tienda[$clave_api] : '',
-                    'horario' === $campo
-                );
-
-                if ('' !== $valor) {
-                    update_post_meta($post_id, $campo, $valor);
-                }
-            }
-
-            if ('' !== $lat) {
-                update_post_meta($post_id, 'lat', $lat);
-            }
-            if ('' !== $lng) {
-                update_post_meta($post_id, 'lng', $lng);
-            }
-
-            // Estado: solo se escribe si el CRM manda un valor reconocible.
-            // Desconocido o vacío deja intacto lo editado en WordPress.
-            $estado_api = cita_comparendo_limpiar_texto(isset($tienda['estado_sede_motor']) ? $tienda['estado_sede_motor'] : '');
-            $estado_norm = cita_comparendo_estado_normalizado($estado_api);
-            $estado_previo = (string) get_post_meta($post_id, 'estado_sede_motor', true);
-
-            if ('inactivo' === $estado_norm) {
-                update_post_meta($post_id, 'estado_sede_motor', 'Inactivo');
-
-                if (! cita_comparendo_estado_inactivo($estado_previo)) {
-                    $stats['deactivated']++;
-                }
-            } elseif ('activo' === $estado_norm) {
-                update_post_meta($post_id, 'estado_sede_motor', 'Activo');
+            if ($res['deactivated']) {
+                $stats['deactivated']++;
             }
 
             $procesadas++;
