@@ -567,6 +567,95 @@ a {
     font-size: 1.05rem;
 }
 
+.testimonial-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .7rem;
+}
+
+.testimonial-card__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    border: 2px solid rgba(253, 215, 1, .9);
+    border-radius: 50%;
+    background-color: var(--cita-navy);
+    color: var(--cita-yellow);
+    font-family: var(--cita-font-heading);
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1;
+    object-fit: cover;
+    box-shadow: 0 6px 14px rgba(15, 46, 90, .16);
+}
+
+button.testimonial-card__icon {
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform .2s ease, background-color .2s ease;
+}
+
+.testimonial-card__audio {
+    position: relative;
+}
+
+.testimonial-card__audio:hover {
+    transform: scale(1.05);
+}
+
+.testimonial-card__audio::before,
+.testimonial-card__audio::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--cita-yellow);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.testimonial-card__audio[aria-pressed="true"]::before {
+    animation: testimonio-onda 1.8s ease-out infinite;
+}
+
+.testimonial-card__audio[aria-pressed="true"]::after {
+    animation: testimonio-onda 1.8s ease-out .6s infinite;
+}
+
+@keyframes testimonio-onda {
+    0% {
+        transform: scale(1);
+        opacity: .55;
+    }
+
+    100% {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .testimonial-card__audio,
+    .testimonial-card__audio::before,
+    .testimonial-card__audio::after {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .testimonial-card__audio[aria-pressed="true"] {
+        outline: 2px solid var(--cita-yellow);
+        outline-offset: 3px;
+    }
+}
+
 .testimonial-card__rating {
     font-family: var(--cita-font-heading);
     font-weight: 800;
@@ -1072,6 +1161,56 @@ a {
 
 .sedes__estado-vacio .btn {
     margin-top: .15rem;
+}
+
+/* Lista de sedes con dos filas visibles y scroll interno. */
+.sedes__zonas {
+    display: contents;
+}
+
+.sedes__scroll-wrap {
+    position: relative;
+}
+
+.sedes__scroll-wrap::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 48px;
+    background: linear-gradient(to bottom, rgba(245, 245, 237, 0), rgba(245, 245, 237, .88));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+
+.sedes__scroll-wrap.has-more:not(.is-at-end)::after {
+    opacity: 1;
+}
+
+.sedes__scroll {
+    position: relative;
+    max-height: var(--sedes-scroll-h, none);
+    padding-left: 12px;
+    padding-right: 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 46, 90, .35) transparent;
+}
+
+.sedes__scroll:focus-visible {
+    outline: 3px solid var(--cita-navy);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sedes__scroll-wrap::after {
+        transition: none;
+    }
 }
 
 /* ==========================================================================

@@ -21,30 +21,38 @@ if ($mostrar_respaldo) {
     $sedes = cita_default_sedes();
 }
 
-// Zonas: etiquetas del contrato, ordenadas como en el diseño.
-$zonas = function_exists('cita_comparendo_zonas') ? (array) cita_comparendo_zonas() : array();
+// Etiquetas de zona en plano para el fallback de `zona_label`. El backend
+// agrupa por ciudad en cita_comparendo_zonas(); aquí solo se usa el plano.
+$zonas = function_exists('cita_comparendo_zonas_planas')
+    ? (array) cita_comparendo_zonas_planas()
+    : array();
+
+if (empty($zonas) && function_exists('cita_comparendo_zonas')) {
+    $zonas_raw = (array) cita_comparendo_zonas();
+
+    foreach ($zonas_raw as $clave => $valor) {
+        if (is_array($valor) && isset($valor['zonas']) && is_array($valor['zonas'])) {
+            foreach ($valor['zonas'] as $slug_zona => $label_zona) {
+                $zonas[$slug_zona] = $label_zona;
+            }
+        } elseif (is_string($valor)) {
+            $zonas[$clave] = $valor;
+        }
+    }
+}
+
 if (empty($zonas)) {
     $zonas = array(
         'norte'     => 'Norte',
         'centro'    => 'Centro',
         'occidente' => 'Occidente',
         'sur'       => 'Sur',
+        'oriente'   => 'Oriente',
     );
 }
 
-$orden_zonas = array('norte', 'centro', 'occidente', 'sur', 'oriente');
-$zonas_ordenadas = array();
-foreach ($orden_zonas as $slug_zona) {
-    if (isset($zonas[$slug_zona])) {
-        $zonas_ordenadas[$slug_zona] = $zonas[$slug_zona];
-        unset($zonas[$slug_zona]);
-    }
-}
-$zonas = $zonas_ordenadas + $zonas;
-
 // Normaliza cada sede para que la vista no dependa de claves ausentes.
 $sedes_normalizadas = array();
-$zonas_con_sedes = array();
 $ciudades_derivadas = array();
 
 foreach ($sedes as $indice => $sede) {
@@ -62,6 +70,7 @@ foreach ($sedes as $indice => $sede) {
         'localidad'      => '',
         'localidad_slug' => '',
         'zona'           => '',
+        'zona_slug'      => '',
         'zona_label'     => '',
         'activa'         => true,
         'sede_crm'       => '',
@@ -81,13 +90,29 @@ foreach ($sedes as $indice => $sede) {
     $sede['lat'] = is_numeric($sede['lat']) ? (float) $sede['lat'] : null;
     $sede['lng'] = is_numeric($sede['lng']) ? (float) $sede['lng'] : null;
 
-    if ('' === $sede['zona_label'] && isset($zonas[$sede['zona']])) {
-        $sede['zona_label'] = $zonas[$sede['zona']];
+    // Compatibilidad de contrato: el backend anterior traía `zona` = slug y
+    // `zona_label` = etiqueta; el nuevo trae `zona` = etiqueta y `zona_slug`.
+    $zona_raw   = isset($sede['zona']) ? trim((string) $sede['zona']) : '';
+    $zona_slug  = isset($sede['zona_slug']) ? trim((string) $sede['zona_slug']) : '';
+    $zona_label = isset($sede['zona_label']) ? trim((string) $sede['zona_label']) : '';
+
+    if ('' === $zona_slug) {
+        $zona_slug = isset($zonas[$zona_raw]) ? $zona_raw : sanitize_title($zona_raw);
     }
 
-    if ('' !== $sede['zona']) {
-        $zonas_con_sedes[$sede['zona']] = true;
+    if ('' === $zona_label) {
+        if ('' !== $zona_raw && ! isset($zonas[$zona_raw])) {
+            $zona_label = $zona_raw;
+        } elseif (isset($zonas[$zona_slug])) {
+            $zona_label = $zonas[$zona_slug];
+        } else {
+            $zona_label = $zona_slug;
+        }
     }
+
+    $sede['zona']       = $zona_label;
+    $sede['zona_slug']  = $zona_slug;
+    $sede['zona_label'] = $zona_label;
 
     if ('' !== $sede['ciudad_slug']) {
         if (! isset($ciudades_derivadas[$sede['ciudad_slug']])) {
@@ -131,18 +156,7 @@ if (empty($ciudades)) {
     }
 }
 
-// Solo se ofrecen las zonas que tienen sedes; si ninguna tiene, se muestran todas.
-$zonas_filtradas = array();
-if (! empty($zonas_con_sedes)) {
-    foreach ($zonas as $slug_zona => $label_zona) {
-        if (isset($zonas_con_sedes[$slug_zona])) {
-            $zonas_filtradas[$slug_zona] = $label_zona;
-        }
-    }
-}
-if (empty($zonas_filtradas)) {
-    $zonas_filtradas = $zonas;
-}
+// Las zonas se generan en JS desde los `data-zona` de las cards visibles.
 
 $mapa_centro = function_exists('cita_comparendo_mapa_centro') ? (array) cita_comparendo_mapa_centro() : array();
 $mapa_centro = wp_parse_args($mapa_centro, array('lat' => 4.5709, 'lng' => -74.2973, 'zoom' => 5));
@@ -237,10 +251,7 @@ $titulo_sedes = cita_field('sedes_titulo', 'Sedes y horarios');
                     <i class="fa-solid fa-location-crosshairs me-1" aria-hidden="true"></i><?php esc_html_e('Cerca de mí', 'cita-comparendo'); ?>
                 </button>
 
-                <?php foreach ($zonas_filtradas as $slug_zona => $label_zona) : ?>
-                    <button type="button" class="sedes__filtro filtro-zona" data-zona="<?php echo esc_attr($slug_zona); ?>"
-                        aria-pressed="false"><?php echo esc_html($label_zona); ?></button>
-                <?php endforeach; ?>
+                <span class="sedes__zonas" id="sedes-zonas" hidden></span>
             </div>
         </div>
 
@@ -248,7 +259,10 @@ $titulo_sedes = cita_field('sedes_titulo', 'Sedes y horarios');
 
         <div class="row g-4 g-lg-5 mt-1 mt-lg-2">
             <div class="col-12 col-xl-6">
-                <div class="row row-cols-1 row-cols-sm-2 g-3 g-lg-4" id="sedes-lista">
+                <div class="sedes__scroll-wrap" id="sedes-scroll-wrap">
+                    <div class="sedes__scroll" id="sedes-scroll" tabindex="0" role="region"
+                        aria-label="<?php esc_attr_e('Lista de sedes', 'cita-comparendo'); ?>">
+                        <div class="row row-cols-1 row-cols-sm-2 g-3 g-lg-4" id="sedes-lista">
                     <?php foreach ($sedes as $indice => $sede) :
                         $es_inicial = ((string) $sede['id'] === (string) $sede_inicial);
                         $tiene_ubicacion = null !== $sede['lat'] && null !== $sede['lng'];
@@ -266,7 +280,9 @@ $titulo_sedes = cita_field('sedes_titulo', 'Sedes y horarios');
                                 data-lng="<?php echo esc_attr($tiene_ubicacion ? (string) $sede['lng'] : ''); ?>"
                                 data-ciudad="<?php echo esc_attr($sede['ciudad']); ?>"
                                 data-ciudad-slug="<?php echo esc_attr($sede['ciudad_slug']); ?>"
-                                data-zona="<?php echo esc_attr($sede['zona']); ?>"
+                                data-zona="<?php echo esc_attr($sede['zona_slug']); ?>"
+                                data-zona-slug="<?php echo esc_attr($sede['zona_slug']); ?>"
+                                data-zona-label="<?php echo esc_attr($sede['zona']); ?>"
                                 data-nombre="<?php echo esc_attr($sede['nombre']); ?>"
                                 data-direccion="<?php echo esc_attr($sede['direccion']); ?>"
                                 data-horario="<?php echo esc_attr($sede['horario']); ?>"
@@ -317,11 +333,13 @@ $titulo_sedes = cita_field('sedes_titulo', 'Sedes y horarios');
                             </article>
                         </div>
                     <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
 
                 <p class="sedes__vacio" id="sedes-vacio" role="status" hidden>
                     <i class="fa-regular fa-map" aria-hidden="true"></i>
-                    <?php esc_html_e('No hay sedes en este filtro', 'cita-comparendo'); ?>
+                    <?php esc_html_e('No hay sedes en esta zona', 'cita-comparendo'); ?>
                 </p>
             </div>
 
