@@ -7,6 +7,12 @@
         '#experiencias'  => 'Experiencias',
         // '#blog'       => 'Blog', // oculto temporalmente
     );
+
+    // Formulario de agendamiento del CRM (modal #modal-load).
+    $load_crm      = function_exists('cita_comparendo_crm_url') ? (string) cita_comparendo_crm_url() : 'https://crm.motordigital.co';
+    $load_slug     = function_exists('cita_comparendo_formulario_slug') ? trim((string) cita_comparendo_formulario_slug()) : '';
+    $load_redirect = function_exists('cita_comparendo_redirect') ? (string) cita_comparendo_redirect() : '';
+    $load_script   = untrailingslashit($load_crm) . '/assets/js/loadclub.js';
     ?>
 
     <footer id="contacto" class="site-footer">
@@ -57,6 +63,58 @@
             </div>
         </div>
     </footer>
+
+    <?php if ('' !== $load_slug) : ?>
+        <div class="modal fade modal-load" id="modal-load" tabindex="-1" aria-labelledby="modal-load-titulo" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg modal-load__dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="modal-load-titulo">
+                            <?php esc_html_e('Agenda tu curso comparendo', 'cita-comparendo'); ?>
+                        </h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="<?php esc_attr_e('Cerrar', 'cita-comparendo'); ?>"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="loadCalendar" class="modal-load__calendar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="<?php echo esc_url($load_script); ?>"
+                url="<?php echo esc_url(untrailingslashit($load_crm)); ?>"
+                formulario="<?php echo esc_attr($load_slug); ?>"
+                dom_content="#loadCalendar"
+                dom_listener=".sede-agendar"
+                redirect="<?php echo esc_url($load_redirect); ?>"
+                defer></script>
+    <?php else : ?>
+        <div class="modal fade modal-load" id="modal-load-aviso" tabindex="-1" aria-labelledby="modal-load-aviso-titulo" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="modal-load-aviso-titulo">
+                            <?php esc_html_e('Formulario no disponible', 'cita-comparendo'); ?>
+                        </h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="<?php esc_attr_e('Cerrar', 'cita-comparendo'); ?>"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">
+                            <?php esc_html_e('El formulario no está configurado. Escríbenos y te ayudamos a agendar tu curso.', 'cita-comparendo'); ?>
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-warning" href="<?php echo esc_url(cita_whatsapp_url()); ?>" target="_blank" rel="noopener">
+                            <i class="fa-brands fa-whatsapp me-1" aria-hidden="true"></i>
+                            <?php esc_html_e('Escribir por WhatsApp', 'cita-comparendo'); ?>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <?php wp_footer(); ?>
     </body>
