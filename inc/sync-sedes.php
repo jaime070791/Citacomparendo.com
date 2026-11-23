@@ -215,10 +215,11 @@ function cita_comparendo_limpiar_texto($valor, $multilinea = false)
  * @param array  $meta     latitud, longitud, nivel_zoom, estado.
  * @return array|WP_Error ['term_id' => int, 'action' => 'created'|'updated']
  */
-function cita_comparendo_upsert_termino($taxonomy, $nombre, array $meta = array())
+function cita_comparendo_upsert_termino($taxonomy, $nombre, array $meta = array(), $parent = 0)
 {
     $taxonomy = sanitize_key($taxonomy);
     $nombre = sanitize_text_field((string) $nombre);
+    $parent = max(0, (int) $parent);
 
     if ('' === $taxonomy || ! taxonomy_exists($taxonomy)) {
         return new WP_Error('cita_termino_taxonomia', __('La taxonomía no existe.', 'cita-comparendo'));
@@ -228,7 +229,7 @@ function cita_comparendo_upsert_termino($taxonomy, $nombre, array $meta = array(
         return new WP_Error('cita_termino_nombre', __('El término no tiene nombre.', 'cita-comparendo'));
     }
 
-    $existente = term_exists($nombre, $taxonomy);
+    $existente = term_exists($nombre, $taxonomy, $parent);
     $term_id = 0;
     $action = 'updated';
 
@@ -239,7 +240,13 @@ function cita_comparendo_upsert_termino($taxonomy, $nombre, array $meta = array(
     } elseif (is_object($existente) && isset($existente->term_id)) {
         $term_id = (int) $existente->term_id;
     } else {
-        $creado = wp_insert_term($nombre, $taxonomy, array('slug' => sanitize_title($nombre)));
+        $argumentos = array('slug' => sanitize_title($nombre));
+
+        if ($parent > 0) {
+            $argumentos['parent'] = $parent;
+        }
+
+        $creado = wp_insert_term($nombre, $taxonomy, $argumentos);
 
         if (is_wp_error($creado)) {
             // Mismo slug con otro nombre (tildes, mayúsculas): reutilizamos.
@@ -311,9 +318,11 @@ function cita_comparendo_upsert_termino($taxonomy, $nombre, array $meta = array(
  *                     barrio, url_video, url_imagen, lat, lng,
  *                     estado_sede_motor, whatsapp, price_range, schema_type,
  *                     ciudad (array nombre/latitud/longitud/nivel_zoom/estado),
- *                     localidad (igual), ciudad_term_id, localidad_term_id.
+ *                     localidad (igual), ciudad_term_id, ciudad_nombre,
+ *                     localidad_term_id, zona (texto libre por ciudad).
  * @return array Resultado con success, action, id, message, reason, estado,
- *               incompleta, reactivated, deactivated, warning, ciudad, localidad.
+ *               incompleta, reactivated, deactivated, warning, ciudad,
+ *               localidad, zona.
  */
 function cita_comparendo_upsert_sede(array $datos)
 {
@@ -370,6 +379,20 @@ function cita_comparendo_upsert_sede(array $datos)
             $ciudad_res->get_error_message()
         );
         $ciudad_res = null;
+    }
+
+    $ciudad_nombre = '';
+
+    if (isset($datos['ciudad']) && is_array($datos['ciudad']) && ! empty($datos['ciudad']['nombre'])) {
+        $ciudad_nombre = sanitize_text_field((string) $datos['ciudad']['nombre']);
+    } elseif (! empty($datos['ciudad_nombre'])) {
+        $ciudad_nombre = sanitize_text_field((string) $datos['ciudad_nombre']);
+    } elseif (! empty($ciudad_res['term_id'])) {
+        $termino_ciudad = get_term((int) $ciudad_res['term_id'], 'ciudad');
+
+        if ($termino_ciudad && ! is_wp_error($termino_ciudad)) {
+            $ciudad_nombre = (string) $termino_ciudad->name;
+        }
     }
 
     $localidad_res = null;
@@ -590,6 +613,46 @@ function cita_comparendo_upsert_sede(array $datos)
         wp_set_object_terms($post_id, array((int) $localidad_res['term_id']), 'localidad', false);
     }
 
+    // Zona por ciudad: término hijo del término-ciudad dentro de `zona`.
+    // Si no llega zona no se toca la que ya tenga la sede.
+    $zona_res = null;
+    $zona = isset($datos['zona']) && is_scalar($datos['zona'])
+        ? trim(sanitize_text_field((string) $datos['zona']))
+        : '';
+
+    if ('' !== $zona && '' !== $ciudad_nombre) {
+        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+            if (mb_strlen($zona) > 60) {
+                $zona = mb_substr($zona, 0, 60);
+            }
+        } elseif (strlen($zona) > 60) {
+            $zona = substr($zona, 0, 60);
+        }
+
+        $padre_zona = cita_comparendo_upsert_termino('zona', $ciudad_nombre, array(), 0);
+
+        if (is_wp_error($padre_zona)) {
+            $advertencias[] = sprintf(
+                /* translators: %s: mensaje de error. */
+                __('Zona: %s', 'cita-comparendo'),
+                $padre_zona->get_error_message()
+            );
+        } else {
+            $zona_res = cita_comparendo_upsert_termino('zona', $zona, array(), (int) $padre_zona['term_id']);
+
+            if (is_wp_error($zona_res)) {
+                $advertencias[] = sprintf(
+                    /* translators: %s: mensaje de error. */
+                    __('Zona: %s', 'cita-comparendo'),
+                    $zona_res->get_error_message()
+                );
+                $zona_res = null;
+            } else {
+                wp_set_object_terms($post_id, array((int) $zona_res['term_id']), 'zona', false);
+            }
+        }
+    }
+
     $estado_final = (string) get_post_status($post_id);
     $mensaje = '';
 
@@ -615,6 +678,7 @@ function cita_comparendo_upsert_sede(array $datos)
         'warning'     => implode(' ', $advertencias),
         'ciudad'      => $ciudad_res,
         'localidad'   => $localidad_res,
+        'zona'        => $zona_res,
     );
 }
 
@@ -796,6 +860,8 @@ function cita_comparendo_sync_aplicar($ubicaciones, $opciones = array())
                 'price_range'        => isset($tienda['price_range']) ? $tienda['price_range'] : '',
                 'schema_type'        => isset($tienda['schema_type']) ? $tienda['schema_type'] : '',
                 'ciudad_term_id'     => $term_id ? (int) $term_id : 0,
+                'ciudad_nombre'      => $nombre_ciudad,
+                'zona'               => isset($tienda['zona']) ? $tienda['zona'] : '',
             ));
 
             if (! $res['success']) {

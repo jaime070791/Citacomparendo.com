@@ -231,6 +231,7 @@ function podpixel_receive_and_verify(WP_REST_Request $request)
             'lng'               => isset($sede['longitud']) ? $sede['longitud'] : (isset($sede['lng']) ? $sede['lng'] : ''),
             'estado_sede_motor' => isset($sede['estado']) ? $sede['estado'] : '',
             'whatsapp'          => $whatsapp_sede,
+            'zona'              => isset($sede['zona']) ? $sede['zona'] : '',
             'ciudad'            => isset($item['ciudad']) && is_array($item['ciudad']) ? $item['ciudad'] : null,
             'localidad'         => isset($item['localidad']) && is_array($item['localidad']) ? $item['localidad'] : null,
         ));

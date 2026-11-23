@@ -184,7 +184,6 @@ function cita_comparendo_sedes()
         return $cache;
     }
 
-    $zonas = cita_comparendo_zonas();
     $sedes = array();
 
     foreach ($posts as $post) {
@@ -214,8 +213,9 @@ function cita_comparendo_sedes()
             'ciudad_slug'    => $ciudad ? (string) $ciudad->slug : '',
             'localidad'      => $localidad ? (string) $localidad->name : '',
             'localidad_slug' => $localidad ? (string) $localidad->slug : '',
-            'zona'           => $zona_slug,
-            'zona_label'     => $zona_slug ? (isset($zonas[$zona_slug]) ? $zonas[$zona_slug] : (string) $zona->name) : '',
+            'zona'           => $zona ? (string) $zona->name : '',
+            'zona_slug'      => $zona_slug,
+            'zona_label'     => $zona ? (string) $zona->name : '',
             'activa'         => 'inactivo' !== $estado_norm,
             'sede_crm'       => '' !== $crm_id ? $crm_id : (string) $post->ID,
         );
@@ -303,44 +303,75 @@ function cita_comparendo_zonas()
         return $cache;
     }
 
-    $default = function_exists('cita_comparendo_zonas_labels')
-        ? cita_comparendo_zonas_labels()
-        : array();
-
     $terminos = get_terms(array(
         'taxonomy'   => 'zona',
         'hide_empty' => false,
     ));
 
     if (empty($terminos) || is_wp_error($terminos)) {
-        $cache = $default;
+        $cache = array();
 
         return $cache;
     }
 
-    $por_slug = array();
+    $por_id = array();
+
     foreach ($terminos as $termino) {
-        $por_slug[(string) $termino->slug] = (string) $termino->name;
+        $por_id[(int) $termino->term_id] = $termino;
     }
 
-    $zonas = array();
+    $grupos = array();
 
-    foreach (array_keys($default) as $slug) {
-        if (isset($por_slug[$slug])) {
-            $zonas[$slug] = $por_slug[$slug];
-            unset($por_slug[$slug]);
+    foreach ($terminos as $termino) {
+        $padre_id = (int) $termino->parent;
+
+        if (! $padre_id || ! isset($por_id[$padre_id])) {
+            continue;
+        }
+
+        $padre = $por_id[$padre_id];
+
+        if (! isset($grupos[$padre->slug])) {
+            $grupos[$padre->slug] = array(
+                'nombre' => (string) $padre->name,
+                'zonas'  => array(),
+            );
+        }
+
+        $grupos[$padre->slug]['zonas'][(string) $termino->slug] = (string) $termino->name;
+    }
+
+    foreach ($grupos as &$grupo) {
+        uksort($grupo['zonas'], 'cita_comparendo_ordenar_texto');
+    }
+
+    unset($grupo);
+
+    uksort($grupos, function ($a, $b) use ($grupos) {
+        return cita_comparendo_ordenar_texto($grupos[$a]['nombre'], $grupos[$b]['nombre']);
+    });
+
+    $cache = $grupos;
+
+    return $cache;
+}
+
+/**
+ * Compatibilidad para consumidores que esperan zonas en plano.
+ *
+ * @return array<string, string> slug => etiqueta
+ */
+function cita_comparendo_zonas_planas()
+{
+    $planas = array();
+
+    foreach (cita_comparendo_zonas() as $ciudad) {
+        foreach ($ciudad['zonas'] as $slug => $nombre) {
+            $planas[$slug] = $nombre;
         }
     }
 
-    uksort($por_slug, 'cita_comparendo_ordenar_texto');
-
-    foreach ($por_slug as $slug => $nombre) {
-        $zonas[$slug] = $nombre;
-    }
-
-    $cache = $zonas;
-
-    return $cache;
+    return $planas;
 }
 
 /**

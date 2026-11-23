@@ -30,6 +30,8 @@ require_once CITA_COMPARENDO_DIR . '/inc/paquetes.php';
 require_once CITA_COMPARENDO_DIR . '/inc/admin-ajustes.php';
 require_once CITA_COMPARENDO_DIR . '/inc/gracias.php';
 require_once CITA_COMPARENDO_DIR . '/inc/rest-sedes.php';
+require_once CITA_COMPARENDO_DIR . '/inc/cpt-testimonio.php';
+require_once CITA_COMPARENDO_DIR . '/inc/testimonios-data.php';
 
 /**
  * Configuración base del tema.

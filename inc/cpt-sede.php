@@ -124,7 +124,7 @@ function cita_comparendo_register_sede_cpt()
             'new_item_name' => __('Nombre de la nueva zona', 'cita-comparendo'),
             'menu_name'     => __('Zonas', 'cita-comparendo'),
         ),
-        'hierarchical'      => false,
+        'hierarchical'      => true,
         'public'            => true,
         'show_ui'           => true,
         'show_admin_column' => true,
@@ -154,31 +154,7 @@ function cita_comparendo_zonas_labels()
     );
 }
 
-/**
- * Crea los términos de `zona` si faltan. Idempotente.
- *
- * Se ejecuta al activar el tema (after_switch_theme corre en init:99, después
- * de que las taxonomías ya están registradas en init:5).
- *
- * @return void
- */
-function cita_comparendo_crear_zonas()
-{
-    if (! taxonomy_exists('zona')) {
-        return;
-    }
 
-    foreach (cita_comparendo_zonas_labels() as $slug => $label) {
-        if (term_exists($slug, 'zona')) {
-            continue;
-        }
-        $resultado = wp_insert_term($label, 'zona', array('slug' => $slug));
-        if (is_wp_error($resultado)) {
-            error_log('cita_comparendo_crear_zonas: ' . $resultado->get_error_message());
-        }
-    }
-}
-add_action('after_switch_theme', 'cita_comparendo_crear_zonas');
 
 /**
  * Refresca las reglas de reescritura al activar el tema.
@@ -195,14 +171,18 @@ function cita_comparendo_flush_rewrite_rules()
 add_action('after_switch_theme', 'cita_comparendo_flush_rewrite_rules');
 
 /**
- * Garantiza las zonas en instalaciones donde el tema ya estaba activo
- * (after_switch_theme no vuelve a dispararse). Se ejecuta una sola vez.
+ * Limpia las zonas globales antiguas (Norte, Centro, …).
+ *
+ * Las zonas ahora cuelgan de su ciudad dentro de la misma taxonomía `zona`.
+ * Los términos globales solo se borran si son huérfanos (sin padre), no
+ * tienen hijas y no tienen ninguna sede asignada; si tienen sedes se dejan.
+ * Se ejecuta una sola vez.
  *
  * @return void
  */
-function cita_comparendo_maybe_crear_zonas()
+function cita_comparendo_migrar_zonas_globales()
 {
-    if (get_option('cita_zonas_inicializadas')) {
+    if (get_option('cita_zonas_migradas')) {
         return;
     }
 
@@ -210,10 +190,35 @@ function cita_comparendo_maybe_crear_zonas()
         return;
     }
 
-    cita_comparendo_crear_zonas();
-    update_option('cita_zonas_inicializadas', 1);
+    foreach (array_keys(cita_comparendo_zonas_labels()) as $slug) {
+        $term = get_term_by('slug', $slug, 'zona');
+
+        if (! $term || is_wp_error($term)) {
+            continue;
+        }
+
+        // Solo huérfanos y sin sedes.
+        if (0 !== (int) $term->parent || 0 !== (int) $term->count) {
+            continue;
+        }
+
+        $hijas = get_terms(array(
+            'taxonomy'   => 'zona',
+            'parent'     => $term->term_id,
+            'hide_empty' => false,
+            'fields'     => 'ids',
+        ));
+
+        if (! empty($hijas) && ! is_wp_error($hijas)) {
+            continue;
+        }
+
+        wp_delete_term($term->term_id, 'zona');
+    }
+
+    update_option('cita_zonas_migradas', 1);
 }
-add_action('init', 'cita_comparendo_maybe_crear_zonas', 20);
+add_action('admin_init', 'cita_comparendo_migrar_zonas_globales');
 
 /**
  * Meta de los términos `ciudad`: coordenadas del mapa y estado en el CRM.

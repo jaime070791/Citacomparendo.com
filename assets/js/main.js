@@ -93,12 +93,17 @@
         }
 
         var select = document.getElementById('filtro-ciudad');
-        var botones = Array.prototype.slice.call(seccion.querySelectorAll('.filtro-zona'));
+        var grupoFiltros = seccion.querySelector('.sedes__filtros');
+        var zonasContenedor = document.getElementById('sedes-zonas');
+        var scroll = document.getElementById('sedes-scroll');
+        var scrollWrap = document.getElementById('sedes-scroll-wrap');
         var vacio = document.getElementById('sedes-vacio');
         var mensaje = document.getElementById('sedes-mensaje');
+        var temporizadorScroll = null;
         var estado = {
             ciudad: 'todas',
             zona: 'todas',
+            zonaCiudad: '',
             usuario: null
         };
 
@@ -126,25 +131,37 @@
 
         if (select) {
             select.addEventListener('change', function () {
+                var zonaPrevia = estado.zona;
+
                 estado.ciudad = select.value || 'todas';
-                if (estado.usuario && estado.zona === 'cercade') {
-                    ordenarPorDistancia();
+                estado.zona = 'todas';
+                estado.zonaCiudad = '';
+
+                if (zonaPrevia === 'cercade') {
+                    estado.usuario = null;
+                    pintarDistancias(null);
                 }
+
+                construirZonas();
+                marcarBotones();
+                limpiarMensaje();
                 aplicarFiltro('ciudad');
             });
         }
 
-        botones.forEach(function (boton) {
-            boton.addEventListener('click', function () {
+        if (grupoFiltros) {
+            grupoFiltros.addEventListener('click', function (event) {
+                var boton = event.target.closest('.filtro-zona');
+                if (!boton) {
+                    return;
+                }
+
                 var zona = boton.getAttribute('data-zona') || 'todas';
 
                 if (zona === 'cercade') {
                     if (estado.zona === 'cercade' && estado.usuario) {
                         marcarBotones();
-                        aplicarFiltro();
-                        if (mapa) {
-                            mapa.centrar(estado.usuario.lat, estado.usuario.lng, 13);
-                        }
+                        aplicarFiltro('cercade');
                         return;
                     }
                     pedirUbicacion();
@@ -152,13 +169,28 @@
                 }
 
                 estado.zona = zona;
+                estado.zonaCiudad = zona === 'todas' ? '' : (boton.getAttribute('data-ciudad-slug') || '');
                 marcarBotones();
                 limpiarMensaje();
-                aplicarFiltro();
+                aplicarFiltro(zona === 'todas' ? 'todas' : 'zona');
             });
-        });
+        }
 
+        construirZonas();
         aplicarFiltro();
+
+        if (scroll) {
+            scroll.addEventListener('scroll', actualizarScroll, { passive: true });
+        }
+
+        window.addEventListener('load', ajustarScroll);
+        window.addEventListener('resize', function () {
+            clearTimeout(temporizadorScroll);
+            temporizadorScroll = setTimeout(ajustarScroll, 150);
+        });
+        if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+            document.fonts.ready.then(ajustarScroll);
+        }
 
         /* --- Card activa ------------------------------------------------ */
         function activarCard(card, centrar) {
@@ -180,11 +212,16 @@
             var visibles = [];
 
             cards.forEach(function (card) {
-                var porCiudad = estado.ciudad === 'todas' ||
-                    card.getAttribute('data-ciudad-slug') === estado.ciudad;
-                var porZona = estado.zona === 'todas' ||
-                    estado.zona === 'cercade' ||
-                    card.getAttribute('data-zona') === estado.zona;
+                var cardCiudad = card.getAttribute('data-ciudad-slug') || '';
+                var cardZona = card.getAttribute('data-zona-slug') || '';
+                var porCiudad = estado.ciudad === 'todas' || cardCiudad === estado.ciudad;
+                var porZona = estado.zona === 'todas' || estado.zona === 'cercade';
+
+                if (!porZona) {
+                    porZona = cardZona === estado.zona &&
+                        ('' === estado.zonaCiudad || cardCiudad === estado.zonaCiudad);
+                }
+
                 var visible = porCiudad && porZona;
                 var columna = card.closest('.sede-item');
 
@@ -200,11 +237,20 @@
                 vacio.hidden = visibles.length > 0;
             }
 
+            if ((origen === 'ciudad' || origen === 'zona') && scroll) {
+                scroll.scrollTop = 0;
+            }
+
+            ajustarScroll();
+
             if (mapa) {
                 mapa.visibles(visibles);
 
                 if (origen === 'ciudad') {
                     centrarCiudad(visibles);
+                }
+                if (origen === 'zona' || origen === 'cercade') {
+                    mapa.encuadrar(visibles);
                 }
                 if (estado.zona !== 'cercade') {
                     mapa.quitarUsuario();
@@ -246,6 +292,7 @@
             }
 
             estado.zona = 'cercade';
+            estado.zonaCiudad = '';
             marcarBotones();
             mostrarMensaje('Buscando tu ubicación…');
 
@@ -256,7 +303,7 @@
                 };
 
                 ordenarPorDistancia();
-                aplicarFiltro();
+                aplicarFiltro('cercade');
 
                 // La sede más cercana pasa a ser la activa (pin rojo) sin mover el mapa.
                 var cercana = Array.prototype.slice.call(lista.querySelectorAll('.sede-card')).filter(function (card) {
@@ -269,7 +316,6 @@
 
                 if (mapa) {
                     mapa.mostrarUsuario(estado.usuario.lat, estado.usuario.lng);
-                    mapa.centrar(estado.usuario.lat, estado.usuario.lng, 13);
                 }
 
                 mostrarMensaje('Mostrando las sedes más cercanas a tu ubicación.');
@@ -284,6 +330,7 @@
 
         function fallarUbicacion(texto) {
             estado.zona = 'todas';
+            estado.zonaCiudad = '';
             estado.usuario = null;
             marcarBotones();
             pintarDistancias(null);
@@ -351,11 +398,197 @@
 
         /* --- Estados ---------------------------------------------------- */
         function marcarBotones() {
+            var botones = Array.prototype.slice.call(seccion.querySelectorAll('.filtro-zona'));
+
             botones.forEach(function (boton) {
                 var activo = boton.getAttribute('data-zona') === estado.zona;
+
+                if (activo && estado.zona !== 'todas' && estado.zona !== 'cercade') {
+                    activo = (boton.getAttribute('data-ciudad-slug') || '') === estado.zonaCiudad;
+                }
+
                 boton.classList.toggle('is-active', activo);
                 boton.setAttribute('aria-pressed', activo ? 'true' : 'false');
             });
+        }
+
+        /* --- Zonas dinámicas ------------------------------------------- */
+        function construirZonas() {
+            if (!zonasContenedor) {
+                return;
+            }
+
+            vaciarZonas();
+
+            var zonas = [];
+            var porClave = {};
+            var etiquetas = {};
+
+            cards.forEach(function (card) {
+                var ciudadSlug = card.getAttribute('data-ciudad-slug') || '';
+                if (estado.ciudad !== 'todas' && ciudadSlug !== estado.ciudad) {
+                    return;
+                }
+
+                var slug = card.getAttribute('data-zona-slug') || '';
+                if (!slug) {
+                    return;
+                }
+
+                var etiqueta = card.getAttribute('data-zona-label') || card.getAttribute('data-zona') || slug;
+                var ciudad = card.getAttribute('data-ciudad') || '';
+                var clave = ciudadSlug + '|' + slug;
+
+                if (!porClave[clave]) {
+                    porClave[clave] = {
+                        slug: slug,
+                        etiqueta: etiqueta,
+                        ciudadSlug: ciudadSlug,
+                        ciudad: ciudad
+                    };
+                    zonas.push(porClave[clave]);
+                    etiquetas[etiqueta] = (etiquetas[etiqueta] || 0) + 1;
+                }
+            });
+
+            if (!zonas.length) {
+                zonasContenedor.hidden = true;
+                return;
+            }
+
+            var orden = ['norte', 'centro', 'occidente', 'sur', 'oriente'];
+
+            zonas.sort(function (a, b) {
+                var indiceA = orden.indexOf(a.slug.split('-')[0]);
+                var indiceB = orden.indexOf(b.slug.split('-')[0]);
+
+                indiceA = -1 === indiceA ? 99 : indiceA;
+                indiceB = -1 === indiceB ? 99 : indiceB;
+
+                if (indiceA !== indiceB) {
+                    return indiceA - indiceB;
+                }
+
+                var porEtiqueta = a.etiqueta.localeCompare(b.etiqueta, 'es');
+
+                return 0 !== porEtiqueta ? porEtiqueta : a.ciudad.localeCompare(b.ciudad, 'es');
+            });
+
+            zonas.forEach(function (zona) {
+                var boton = document.createElement('button');
+                var etiqueta = zona.etiqueta;
+
+                if (etiquetas[zona.etiqueta] > 1 && '' !== zona.ciudad) {
+                    etiqueta += ' · ' + zona.ciudad;
+                }
+
+                boton.type = 'button';
+                boton.className = 'sedes__filtro filtro-zona';
+                boton.setAttribute('data-zona', zona.slug);
+                boton.setAttribute('data-ciudad-slug', zona.ciudadSlug);
+                boton.setAttribute('aria-pressed', 'false');
+                boton.textContent = etiqueta;
+
+                zonasContenedor.appendChild(boton);
+            });
+
+            zonasContenedor.hidden = false;
+        }
+
+        function vaciarZonas() {
+            if (!zonasContenedor) {
+                return;
+            }
+
+            while (zonasContenedor.firstChild) {
+                zonasContenedor.removeChild(zonasContenedor.firstChild);
+            }
+        }
+
+        /* --- Alto de la lista: dos filas y degradado -------------------- */
+        function ajustarScroll() {
+            if (!scroll || !scrollWrap) {
+                return;
+            }
+
+            var visibles = [];
+
+            cards.forEach(function (card) {
+                var columna = card.closest('.sede-item');
+                if (columna && !columna.classList.contains('d-none')) {
+                    visibles.push(columna);
+                }
+            });
+
+            scroll.style.removeProperty('--sedes-scroll-h');
+
+            if (!visibles.length) {
+                scrollWrap.hidden = true;
+                scrollWrap.classList.remove('has-more', 'is-at-end');
+                return;
+            }
+
+            scrollWrap.hidden = false;
+
+            if (visibles.length <= 4) {
+                scroll.scrollTop = 0;
+                scrollWrap.classList.remove('has-more', 'is-at-end');
+                invalidarMapa();
+                return;
+            }
+
+            var tops = [];
+
+            visibles.forEach(function (item) {
+                if (-1 === tops.indexOf(item.offsetTop)) {
+                    tops.push(item.offsetTop);
+                }
+            });
+
+            tops.sort(function (a, b) {
+                return a - b;
+            });
+
+            if (tops.length <= 2) {
+                scroll.scrollTop = 0;
+                scrollWrap.classList.remove('has-more', 'is-at-end');
+                invalidarMapa();
+                return;
+            }
+
+            var segundaFila = tops[1];
+            var fondo = 0;
+
+            visibles.forEach(function (item) {
+                if (item.offsetTop === segundaFila) {
+                    fondo = Math.max(fondo, item.offsetTop + item.offsetHeight);
+                }
+            });
+
+            if (fondo > 0) {
+                scroll.style.setProperty('--sedes-scroll-h', fondo + 'px');
+            }
+
+            invalidarMapa();
+            actualizarScroll();
+        }
+
+        function actualizarScroll() {
+            if (!scroll || !scrollWrap || scrollWrap.hidden) {
+                return;
+            }
+
+            var sobra = scroll.scrollHeight - scroll.clientHeight;
+            var hay = sobra > 2;
+
+            scrollWrap.classList.toggle('has-more', hay);
+            scrollWrap.classList.toggle('is-at-end', !hay || scroll.scrollTop >= sobra - 2);
+        }
+
+        function invalidarMapa() {
+            if (window.citaMap && typeof window.citaMap.invalidateSize === 'function') {
+                window.citaMap.invalidateSize();
+            }
         }
 
         function mostrarMensaje(texto, esError) {
@@ -525,7 +758,7 @@
                         }
                     });
                     if (puntos.length) {
-                        map.fitBounds(puntos, { padding: [40, 40], maxZoom: 15 });
+                        map.fitBounds(puntos, { padding: [40, 40], maxZoom: 14 });
                     }
                 },
 
