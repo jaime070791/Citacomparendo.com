@@ -38,8 +38,14 @@ function cita_field($name, $default = '')
  */
 function cita_whatsapp_url($sede = '')
 {
-    $numero = cita_field('whatsapp_numero', '573168721085');
-    $texto  = 'Hola, quiero agendar mi curso comparendo.';
+    $numero = get_option('cita_whatsapp', '');
+    $numero = is_string($numero) ? trim($numero) : '';
+
+    if ('' === $numero) {
+        $numero = '573168721085';
+    }
+
+    $texto = 'Hola, quiero agendar mi curso comparendo.';
     if ($sede) {
         $texto .= ' Sede: ' . $sede . '.';
     }

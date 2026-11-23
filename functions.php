@@ -20,6 +20,16 @@ define('CITA_COMPARENDO_VCACHE', '1.0.0');
 require_once CITA_COMPARENDO_DIR . '/inc/class-cita-comparendo-bootstrap-walker.php';
 require_once CITA_COMPARENDO_DIR . '/inc/template-tags.php';
 
+// CPT de sedes, sincronización con el CRM y compra de paquetes.
+require_once CITA_COMPARENDO_DIR . '/inc/cpt-sede.php';
+require_once CITA_COMPARENDO_DIR . '/inc/sede-meta.php';
+require_once CITA_COMPARENDO_DIR . '/inc/api-crm.php';
+require_once CITA_COMPARENDO_DIR . '/inc/sync-sedes.php';
+require_once CITA_COMPARENDO_DIR . '/inc/sedes-data.php';
+require_once CITA_COMPARENDO_DIR . '/inc/paquetes.php';
+require_once CITA_COMPARENDO_DIR . '/inc/admin-ajustes.php';
+require_once CITA_COMPARENDO_DIR . '/inc/gracias.php';
+
 /**
  * Configuración base del tema.
  */
@@ -89,43 +99,85 @@ function cita_comparendo_scripts()
 
     if (is_front_page()) {
         wp_enqueue_script('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true);
-        wp_localize_script('cita-main', 'CITA_MAP', cita_comparendo_map_data());
     }
 }
 add_action('wp_enqueue_scripts', 'cita_comparendo_scripts');
 
 /**
- * Datos que consume Leaflet desde main.js.
+ * Tabla de compras de paquetes: se crea/actualiza al activar el tema.
+ */
+add_action('after_switch_theme', 'cita_comparendo_crear_tabla_paquetes');
+
+/**
+ * JS de administración para Sedes → Sincronizar sedes.
+ *
+ * @param string $hook_suffix Pantalla actual del admin.
+ * @return void
+ */
+function cita_comparendo_admin_assets($hook_suffix)
+{
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    $es_sede = ($screen && 'sede' === $screen->post_type)
+        || false !== strpos((string) $hook_suffix, 'cita-sincronizar-sedes');
+
+    if (! $es_sede) {
+        return;
+    }
+
+    wp_enqueue_script(
+        'cita-sedes-sync',
+        CITA_COMPARENDO_JS_URI . 'sedes-sync.js',
+        array(),
+        cita_comparendo_asset_version('/assets/js/sedes-sync.js'),
+        true
+    );
+    wp_localize_script('cita-sedes-sync', 'CITA_SEDES_SYNC', cita_comparendo_sedes_sync_config());
+}
+add_action('admin_enqueue_scripts', 'cita_comparendo_admin_assets');
+
+/**
+ * Datos del mapa que se localizan como CITA_MAP.
+ *
+ * Los pines salen del CPT `sede` (solo sedes publicadas con coordenadas) y el
+ * centro/zoom por defecto es Colombia. Sin pines devuelve una lista vacía: el
+ * frontend tiene su propio fallback visual.
  *
  * @return array
  */
-function cita_comparendo_map_data()
+function cita_comparendo_map_data(): array
 {
-    $sedes = cita_field('sedes', cita_default_sedes());
-    $pins  = array();
+    $pins = [];
 
-    foreach ($sedes as $sede) {
-        if (empty($sede['lat']) || empty($sede['lng'])) {
+    foreach (cita_comparendo_sedes() as $sede) {
+        if ($sede['lat'] === null || $sede['lng'] === null) {
             continue;
         }
-        $pins[] = array(
-            'nombre'    => $sede['nombre'],
-            'direccion' => $sede['direccion'],
-            'horario'   => $sede['horario'],
-            'lat'       => (float) $sede['lat'],
-            'lng'       => (float) $sede['lng'],
-            'activa'    => ! empty($sede['activa']),
-            'url'       => cita_whatsapp_url($sede['nombre']),
-        );
+        $pins[] = [
+            'id'          => $sede['id'],
+            'nombre'      => $sede['nombre'],
+            'direccion'   => $sede['direccion'],
+            'horario'     => $sede['horario'],
+            'telefono'    => $sede['telefono'],
+            'lat'         => $sede['lat'],
+            'lng'         => $sede['lng'],
+            'activa'      => $sede['activa'],
+            'ciudad'      => $sede['ciudad'],
+            'ciudad_slug' => $sede['ciudad_slug'],
+            'zona'        => $sede['zona'],
+            'sede_crm'    => $sede['sede_crm'],
+        ];
     }
 
-    return array(
-        'center'  => array(6.2442, -75.5812),
-        'zoom'    => 12,
-        'pins'    => $pins,
-        'pinBlue' => CITA_COMPARENDO_IMG_URI . 'elements/pin-blue.svg',
-        'pinRed'  => CITA_COMPARENDO_IMG_URI . 'elements/pin-red.svg',
-    );
+    $centro = cita_comparendo_mapa_centro();
+
+    return [
+        'center'   => ['lat' => $centro['lat'], 'lng' => $centro['lng']],
+        'zoom'     => $centro['zoom'],
+        'pins'     => $pins,
+        'ciudades' => cita_comparendo_ciudades(),
+        'pinBlue'  => CITA_COMPARENDO_IMG_URI . 'elements/pin-blue.svg',
+        'pinRed'   => CITA_COMPARENDO_IMG_URI . 'elements/pin-red.svg',
+    ];
 }
 
 /**

@@ -186,3 +186,373 @@
         transition: none !important;
     }
 }
+
+/* ---------- 1199px: toolbar en dos filas y mapa bajo las cards ---------- */
+@media (max-width: 1199.98px) {
+    .sedes__toolbar {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .5rem;
+        padding: .55rem;
+        border-radius: 24px;
+    }
+
+    .sedes__ciudad {
+        width: 100%;
+    }
+
+    .sedes__select {
+        width: 100%;
+        max-width: none;
+    }
+
+    .sedes__ciudad i {
+        left: 1.2rem;
+    }
+
+    .sedes__filtros {
+        justify-content: center;
+        gap: .15rem .1rem;
+    }
+
+    .map--sedes {
+        min-height: 420px;
+    }
+
+    .paquetes-hero h1 {
+        max-width: 100%;
+    }
+}
+
+/* ---------- 991px ---------- */
+@media (max-width: 991.98px) {
+    .sedes__filtro {
+        padding: .5rem .8rem;
+    }
+
+    .sede-card .sede-card__btn {
+        --bs-btn-padding-x: 1.35rem;
+    }
+
+    .sede-ficha {
+        min-height: 0;
+    }
+
+    .map--sede {
+        min-height: 380px;
+    }
+
+    .pack-card__resumen {
+        min-height: 0;
+    }
+
+    .pack-card {
+        padding: 1.55rem 1.4rem 1.4rem;
+    }
+}
+
+/* ---------- 767px ---------- */
+@media (max-width: 767.98px) {
+    .sedes__aviso-admin {
+        margin-top: -.75rem;
+        font-size: .74rem;
+    }
+
+    .sedes__toolbar {
+        border-radius: 20px;
+    }
+
+    .sedes__select {
+        font-size: .9rem;
+    }
+
+    .sedes__filtros {
+        justify-content: center;
+    }
+
+    .sedes__filtro {
+        font-size: .84rem;
+        padding: .45rem .7rem;
+    }
+
+    #sedes-lista .sede-card {
+        padding: 1.3rem 1.3rem;
+    }
+
+    .map--sedes {
+        min-height: 360px;
+    }
+
+    .map--sede {
+        min-height: 340px;
+    }
+
+    .modal-load__calendar,
+    .modal-load__calendar iframe {
+        min-height: 460px;
+    }
+
+    .paquete-form {
+        border-radius: 18px;
+    }
+
+    .paquete-form .form-control,
+    .paquete-form .form-select {
+        /* 16px evita el zoom automático en iOS. */
+        font-size: 16px;
+    }
+
+    .paquete-form__submit {
+        width: 100%;
+    }
+
+    .paquete-aside {
+        border-radius: 18px;
+    }
+
+    .gracias__hero {
+        padding-block: 2.5rem;
+    }
+
+    .gracias__acciones {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .gracias__acciones .btn {
+        width: 100%;
+    }
+
+    .sede-hero__volver {
+        padding: .5rem .9rem;
+        font-size: .82rem;
+    }
+
+    .paquetes-hero__sellos {
+        font-size: .82rem;
+    }
+}
+
+/* ---------- 575px ---------- */
+@media (max-width: 575.98px) {
+    .sedes__filtros {
+        gap: 0;
+    }
+
+    .sedes__estado-vacio {
+        padding: 1.6rem 1.15rem;
+        border-radius: 20px;
+    }
+
+    .sedes__estado-vacio .btn {
+        width: 100%;
+    }
+
+    .sedes__filtro {
+        font-size: .8rem;
+        padding: .42rem .55rem;
+    }
+
+    .sedes__filtro i {
+        margin-right: .2rem !important;
+    }
+
+    .sedes__select {
+        font-size: .88rem;
+        padding: .55rem 1rem .55rem 2.2rem;
+    }
+
+    .map--sedes {
+        min-height: 320px;
+    }
+
+    .map--sede {
+        min-height: 300px;
+    }
+
+    .sede-card__name {
+        font-size: 1rem;
+    }
+
+    .sede-card__meta,
+    .sede-card__lugar {
+        font-size: .82rem;
+    }
+
+    .sede-dato__icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+    }
+
+    .sede-ficha {
+        padding: 1.25rem 1.15rem;
+    }
+
+    .sede-ficha__acciones {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sede-ficha__acciones .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .pack-card {
+        padding: 1.4rem 1.2rem 1.25rem;
+    }
+
+    .pack-card__numero {
+        font-size: 2.35rem;
+    }
+
+    .pack-card__badge {
+        top: .95rem;
+        right: .95rem;
+    }
+
+    .paquete-form {
+        padding: 1.35rem 1.1rem;
+    }
+
+    .paquete-form__elegido {
+        font-size: .78rem;
+    }
+
+    .gracias__icono {
+        width: 68px;
+        height: 68px;
+        font-size: 1.7rem;
+    }
+
+    .gracias__card {
+        padding: 1.4rem 1.1rem;
+    }
+
+    .gracias__pasos li {
+        font-size: .88rem;
+    }
+
+    .gracias__paso-numero {
+        width: 27px;
+        height: 27px;
+        font-size: .78rem;
+    }
+}
+
+/* ---------- Movimiento reducido: componentes nuevos ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .sede-card,
+    .pack-card,
+    .sedes__select,
+    .sedes__filtro,
+    .sede-card__btn,
+    .pack-card__cta,
+    .sede-hero__volver {
+        transition: none !important;
+    }
+
+    .sede-card:hover,
+    .pack-card:hover {
+        transform: none !important;
+    }
+}
+
+/* ---------- 991px: gracias registro de cita ---------- */
+@media (max-width: 991.98px) {
+    .gr-aviso {
+        padding: 1.5rem 1.35rem;
+    }
+}
+
+/* ---------- 767px: gracias registro de cita ---------- */
+@media (max-width: 767.98px) {
+    .gracias-registro__hero {
+        padding-block: 2.5rem;
+    }
+
+    .gracias-registro .gracias__bajada {
+        font-size: .95rem;
+    }
+
+    .gr-bloque {
+        border-radius: 18px;
+    }
+
+    .gr-bloque__cabecera {
+        margin-bottom: 1rem;
+    }
+
+    .gr-aviso {
+        flex-direction: column;
+        gap: .8rem;
+        border-radius: 16px;
+    }
+
+    .gr-acciones {
+        margin-top: 1.6rem;
+    }
+
+    .gr-acciones__volver {
+        align-self: center;
+        justify-content: center;
+    }
+}
+
+/* ---------- 575px: gracias registro de cita ---------- */
+@media (max-width: 575.98px) {
+    .gr-estado,
+    .gr-aviso {
+        padding: 1.25rem 1.1rem;
+    }
+
+    .gracias-registro__hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .gr-bloque {
+        padding: 1.2rem 1.05rem;
+    }
+
+    .gr-datos,
+    .gr-cita__datos {
+        grid-template-columns: 1fr;
+    }
+
+    .gr-cita {
+        padding: 1rem .95rem;
+    }
+
+    .gr-cita__cabecera {
+        gap: .6rem;
+    }
+
+    .gr-cita__num {
+        width: 30px;
+        height: 30px;
+        font-size: .82rem;
+    }
+
+    .gr-cita__sede {
+        font-size: .98rem;
+    }
+
+    .gr-dato dd {
+        font-size: .94rem;
+    }
+
+    .gr-bloque__icono {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* ---------- Movimiento reducido: skeleton del resumen ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .gr-skel__linea {
+        animation: none;
+        opacity: 1;
+    }
+}
