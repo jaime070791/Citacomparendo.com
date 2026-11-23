@@ -29,6 +29,7 @@ require_once CITA_COMPARENDO_DIR . '/inc/sedes-data.php';
 require_once CITA_COMPARENDO_DIR . '/inc/paquetes.php';
 require_once CITA_COMPARENDO_DIR . '/inc/admin-ajustes.php';
 require_once CITA_COMPARENDO_DIR . '/inc/gracias.php';
+require_once CITA_COMPARENDO_DIR . '/inc/rest-sedes.php';
 
 /**
  * Configuración base del tema.

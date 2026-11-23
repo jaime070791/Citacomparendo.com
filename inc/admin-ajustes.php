@@ -57,6 +57,13 @@ function cita_comparendo_registrar_ajustes()
         'default'           => '',
         'show_in_rest'      => false,
     ));
+
+    register_setting('cita_comparendo_ajustes', 'cita_webhook_secret', array(
+        'type'              => 'string',
+        'sanitize_callback' => 'cita_comparendo_sanitizar_secreto',
+        'default'           => '',
+        'show_in_rest'      => false,
+    ));
 }
 add_action('admin_init', 'cita_comparendo_registrar_ajustes');
 
@@ -100,6 +107,17 @@ function cita_comparendo_sanitizar_whatsapp($valor)
     $digitos = preg_replace('/\D/', '', $valor);
 
     return '' === $digitos ? '' : $digitos;
+}
+
+/**
+ * Sanitiza el secreto del webhook de sedes.
+ *
+ * @param mixed $valor Valor enviado.
+ * @return string
+ */
+function cita_comparendo_sanitizar_secreto($valor)
+{
+    return is_string($valor) ? sanitize_text_field(trim($valor)) : '';
 }
 
 /**
@@ -262,6 +280,47 @@ function cita_comparendo_render_ajustes_page()
                                 value="<?php echo esc_attr((string) cita_comparendo_sync_limite()); ?>">
                             <p class="description">
                                 <?php esc_html_e('Máximo de sedes que procesa cada sincronización. 0 = sin límite.', 'cita-comparendo'); ?>
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2 class="title"><?php esc_html_e('Webhook de sedes (push)', 'cita-comparendo'); ?></h2>
+            <table class="form-table" role="presentation">
+                <tbody>
+                    <tr>
+                        <th scope="row">
+                            <label for="cita-webhook-secret"><?php esc_html_e('Secreto del webhook de sedes', 'cita-comparendo'); ?></label>
+                        </th>
+                        <td>
+                            <input type="password" id="cita-webhook-secret" name="cita_webhook_secret" class="regular-text code"
+                                value="<?php echo esc_attr((string) get_option('cita_webhook_secret', '')); ?>"
+                                autocomplete="new-password">
+                            <p class="description">
+                                <?php esc_html_e('Debe coincidir con el secreto del sitio en el CRM (dashboard/wordpress) o con encryption_key de tb_config.', 'cita-comparendo'); ?>
+                            </p>
+                            <?php if (defined('PODPIXEL_SHARED_SECRET')) : ?>
+                                <p class="description">
+                                    <strong><?php esc_html_e('PODPIXEL_SHARED_SECRET está definida en wp-config.php: el webhook usa esa constante y este campo se ignora.', 'cita-comparendo'); ?></strong>
+                                </p>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('URL del endpoint', 'cita-comparendo'); ?></th>
+                        <td>
+                            <input type="text" readonly class="large-text code"
+                                value="<?php echo esc_attr(rest_url('podpixel/v1/receive')); ?>"
+                                onclick="this.select();">
+                            <p class="description">
+                                <?php
+                                printf(
+                                    /* translators: %s: URL de ping. */
+                                    esc_html__('Cópiala en el CRM (dashboard/wordpress) como URL del sitio. Ping: %s', 'cita-comparendo'),
+                                    '<code>' . esc_html(rest_url('podpixel/v1/ping')) . '</code>'
+                                );
+                                ?>
                             </p>
                         </td>
                     </tr>
