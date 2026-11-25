@@ -1,5 +1,8 @@
 <?php
 /**
+ * Template Name: Inicio
+ * Template Post Type: page
+ *
  * Landing one-page.
  *
  * @package Cita_Comparendo
