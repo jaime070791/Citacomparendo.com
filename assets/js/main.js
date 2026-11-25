@@ -418,6 +418,14 @@
                 return;
             }
 
+            /* Con "Todas" solo se muestran Todas y Cerca de mí; las zonas
+               aparecen únicamente al elegir una ciudad concreta. */
+            if (estado.ciudad === 'todas') {
+                vaciarZonas();
+                zonasContenedor.hidden = true;
+                return;
+            }
+
             vaciarZonas();
 
             var zonas = [];
