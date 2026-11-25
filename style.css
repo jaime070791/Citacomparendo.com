@@ -284,6 +284,12 @@ a {
     margin-bottom: 0;
 }
 
+/* Estrella del rating: "palpita" con Animate.css (heartBeat en bucle). */
+.hero__rating .fa-star {
+    display: inline-block;
+    --animate-duration: 2s;
+}
+
 .hero__rating-line {
     display: inline-block;
     width: 74px;

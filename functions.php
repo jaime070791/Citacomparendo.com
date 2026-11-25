@@ -83,7 +83,8 @@ function cita_comparendo_styles()
     wp_enqueue_style('bootstrap', CITA_COMPARENDO_CSS_URI . 'bootstrap.min.css', array(), '5.3.8');
     wp_enqueue_style('cita-fuentes', CITA_COMPARENDO_CSS_URI . 'fuentes.css', array(), cita_comparendo_asset_version('/assets/css/fuentes.css'));
     wp_enqueue_style('fontawesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', array(), '6.5.1');
-    wp_enqueue_style('cita-style', CITA_COMPARENDO_URI . '/style.css', array('bootstrap', 'cita-fuentes', 'fontawesome'), cita_comparendo_asset_version('/style.css'));
+    wp_enqueue_style('animate-css', 'https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css', array(), '4.1.1');
+    wp_enqueue_style('cita-style', CITA_COMPARENDO_URI . '/style.css', array('bootstrap', 'cita-fuentes', 'fontawesome', 'animate-css'), cita_comparendo_asset_version('/style.css'));
     wp_enqueue_style('cita-responsive', CITA_COMPARENDO_CSS_URI . 'responsive-style.css', array('cita-style'), cita_comparendo_asset_version('/assets/css/responsive-style.css'));
 
     if (is_front_page()) {
