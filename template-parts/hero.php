@@ -36,7 +36,7 @@ $hero_rating     = cita_field('hero_rating', '4,8/5');
                 <p class="hero__rating" data-reveal style="--reveal-delay:340ms;">
                     <?php echo esc_html($hero_rating_txt); ?>
                     <span class="text-yellow"><?php echo esc_html($hero_rating); ?></span>
-                    <i class="fa-solid fa-star text-yellow" aria-hidden="true"></i>
+                    <i class="fa-solid fa-star text-yellow animate__animated animate__heartBeat animate__infinite" aria-hidden="true"></i>
                     <span class="hero__rating-line" aria-hidden="true"></span>
                 </p>
             </div>
