@@ -84,17 +84,11 @@ cat > "$IMG/logos/pse.svg" <<'SVG'
 </svg>
 SVG
 
-# --- Pines del mapa ---
-cat > "$IMG/elements/pin-blue.svg" <<'SVG'
+# --- Pin del mapa ---
+cat > "$IMG/elements/pin.svg" <<'SVG'
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46">
-  <path d="M16 1C7.7 1 1 7.6 1 15.8 1 27 16 45 16 45s15-18 15-29.2C31 7.6 24.3 1 16 1z" fill="#1E7EBB"/>
-  <circle cx="16" cy="16" r="6" fill="#BBE3F7"/>
-</svg>
-SVG
-cat > "$IMG/elements/pin-red.svg" <<'SVG'
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46">
-  <path d="M16 1C7.7 1 1 7.6 1 15.8 1 27 16 45 16 45s15-18 15-29.2C31 7.6 24.3 1 16 1z" fill="#E5362F"/>
-  <circle cx="16" cy="16" r="6" fill="#FFFFFF"/>
+  <path d="M16 1C7.7 1 1 7.6 1 15.8 1 27 16 45 16 45s15-18 15-29.2C31 7.6 24.3 1 16 1z" fill="#0F2E5A"/>
+  <circle cx="16" cy="16" r="6" fill="#FDD701"/>
 </svg>
 SVG
 

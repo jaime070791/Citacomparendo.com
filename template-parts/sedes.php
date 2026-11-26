@@ -311,32 +311,36 @@ $titulo_sedes = cita_field('sedes_titulo', 'Sedes y horarios');
 
                                 <span class="sede-card__dist" hidden></span>
 
-                                <div class="sede-card__acciones d-flex flex-wrap align-items-center gap-2 mt-auto">
-                                    <?php if ($puede_agendar) : ?>
-                                        <button type="button"
-                                            class="btn sede-card__btn sede-agendar"
-                                            sede="<?php echo esc_attr($sede_crm); ?>"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="<?php echo esc_attr($modal_destino); ?>">
-                                            <?php esc_html_e('Agendar', 'cita-comparendo'); ?>
-                                        </button>
-                                    <?php elseif (! empty($sede['activa'])) : ?>
-                                        <span class="sede-card__no-disponible">
-                                            <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                                            <?php esc_html_e('Próximamente', 'cita-comparendo'); ?>
-                                        </span>
-                                    <?php else : ?>
-                                        <span class="sede-card__no-disponible">
-                                            <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                                            <?php esc_html_e('No disponible', 'cita-comparendo'); ?>
-                                        </span>
-                                    <?php endif; ?>
+                                <div class="sede-card__acciones row g-2 mx-0 align-items-center mt-auto">
+                                    <div class="<?php echo $tiene_ubicacion ? 'col-6' : 'col-12'; ?>">
+                                        <?php if ($puede_agendar) : ?>
+                                            <button type="button"
+                                                class="btn sede-card__btn sede-agendar w-100"
+                                                sede="<?php echo esc_attr($sede_crm); ?>"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="<?php echo esc_attr($modal_destino); ?>">
+                                                <?php esc_html_e('Agendar', 'cita-comparendo'); ?>
+                                            </button>
+                                        <?php elseif (! empty($sede['activa'])) : ?>
+                                            <span class="sede-card__no-disponible">
+                                                <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                                                <?php esc_html_e('Próximamente', 'cita-comparendo'); ?>
+                                            </span>
+                                        <?php else : ?>
+                                            <span class="sede-card__no-disponible">
+                                                <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                                                <?php esc_html_e('No disponible', 'cita-comparendo'); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
 
                                     <?php if ($tiene_ubicacion) : ?>
-                                        <button type="button" class="btn sede-card__btn-secundario sede-mapa">
-                                            <i class="fa-solid fa-map-location-dot me-1" aria-hidden="true"></i>
-                                            <?php esc_html_e('Ver en mapa', 'cita-comparendo'); ?>
-                                        </button>
+                                        <div class="col-6">
+                                            <button type="button" class="btn sede-card__btn-secundario sede-mapa w-100">
+                                                <i class="fa-solid fa-map-location-dot me-1" aria-hidden="true"></i>
+                                                <?php esc_html_e('Ver en mapa', 'cita-comparendo'); ?>
+                                            </button>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </article>
@@ -358,8 +362,7 @@ $titulo_sedes = cita_field('sedes_titulo', 'Sedes y horarios');
                     data-lat="<?php echo esc_attr((string) $mapa_centro['lat']); ?>"
                     data-lng="<?php echo esc_attr((string) $mapa_centro['lng']); ?>"
                     data-zoom="<?php echo esc_attr((string) $mapa_centro['zoom']); ?>"
-                    data-pin-blue="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'elements/pin-blue.svg'); ?>"
-                    data-pin-red="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'elements/pin-red.svg'); ?>"
+                    data-pin="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'elements/pin.svg?ver=' . cita_comparendo_asset_version('/assets/images/elements/pin.svg')); ?>"
                     data-reveal style="--reveal-delay:160ms;">
                     <div class="map__fallback d-flex flex-column align-items-center justify-content-center text-navy text-center px-3" id="mapa-fallback">
                         <i class="fa-solid fa-map-location-dot fs-4 mb-2" aria-hidden="true"></i>

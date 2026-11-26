@@ -179,8 +179,7 @@ function cita_comparendo_map_data(): array
         'zoom'     => $centro['zoom'],
         'pins'     => $pins,
         'ciudades' => cita_comparendo_ciudades(),
-        'pinBlue'  => CITA_COMPARENDO_IMG_URI . 'elements/pin-blue.svg',
-        'pinRed'   => CITA_COMPARENDO_IMG_URI . 'elements/pin-red.svg',
+        'pin'      => CITA_COMPARENDO_IMG_URI . 'elements/pin.svg?ver=' . cita_comparendo_asset_version('/assets/images/elements/pin.svg'),
     ];
 }
 
