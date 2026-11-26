@@ -28,7 +28,7 @@ cat > "$IMG/logos/logo-cita.svg" <<'SVG'
 SVG
 
 # --- Logo CITA (footer, sobre navy) ---
-cat > "$IMG/logos/logo-cita-footer.svg" <<'SVG'
+cat > "$IMG/logos/logo-cita-footer.png" <<'PNG'
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 86" role="img" aria-label="CITA Comparendo">
   <g font-family="Montserrat, Arial, sans-serif">
     <text x="0" y="42" font-size="40" font-weight="800" font-style="italic" fill="#FFFFFF" letter-spacing="-1">CITA</text>
