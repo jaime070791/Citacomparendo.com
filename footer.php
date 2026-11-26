@@ -1,5 +1,9 @@
     <?php
-    $footer_logos = array('simit.svg', 'runt.svg', 'mintransporte.svg', 'visa.svg', 'mastercard.svg', 'pse.svg');
+    $footer_logos = array(
+        'simit-logo.png'           => array('alt' => 'SIMIT', 'clase' => 'site-footer__logo--simit'),
+        'logo runt.png'            => array('alt' => 'RUNT', 'clase' => 'site-footer__logo--runt'),
+        'logo-min-transporte.jpeg' => array('alt' => 'Mintransporte', 'clase' => 'site-footer__logo--mintransporte'),
+    );
     $footer_nav   = array(
         '#inicio'        => 'Calcular mi descuento',
         '#sedes'         => 'Sedes y horarios',
@@ -20,12 +24,12 @@
             <div class="row align-items-center g-4">
 
                 <div class="col-12 col-lg-3">
-                    <a href="<?php echo esc_url(home_url('/')); ?>" class="site-footer__logo-chip"
+                    <a href="<?php echo esc_url(home_url('/')); ?>" class="d-inline-block"
                         aria-label="<?php echo esc_attr(get_bloginfo('name')); ?>">
                         <?php if (has_custom_logo()) : ?>
                             <?php the_custom_logo(); ?>
                         <?php else : ?>
-                            <img class="site-footer__logo" src="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'logos/logo-cita.png'); ?>"
+                            <img class="site-footer__logo" src="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'logos/logo-cita-footer.png'); ?>"
                                 alt="<?php echo esc_attr(get_bloginfo('name')); ?>" loading="lazy">
                         <?php endif; ?>
                     </a>
@@ -50,12 +54,14 @@
                 </div>
 
                 <div class="col-12 col-lg-4">
-                    <p class="site-footer__legal text-lg-end mb-2">
+                    <p class="site-footer__legal text-lg-center mb-2">
                         <?php echo esc_html(cita_field('footer_legal', 'Todas nuestras sedes aliadas son avalados y vigilados por estas entidades')); ?>
                     </p>
-                    <div class="d-flex flex-wrap align-items-center gap-2 gap-lg-3 justify-content-lg-end site-footer__logos">
-                        <?php foreach ($footer_logos as $logo) : ?>
-                            <img src="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'logos/' . $logo); ?>" alt="" loading="lazy">
+                    <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-between gap-3 site-footer__logos">
+                        <?php foreach ($footer_logos as $archivo => $logo) : ?>
+                            <img class="<?php echo esc_attr($logo['clase']); ?>"
+                                src="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'logos/' . $archivo); ?>"
+                                alt="<?php echo esc_attr($logo['alt']); ?>" loading="lazy">
                         <?php endforeach; ?>
                     </div>
                 </div>
