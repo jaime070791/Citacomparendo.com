@@ -1517,19 +1517,8 @@ button.testimonial-card__icon {
     --bs-btn-active-border-color: var(--cita-yellow-hover);
 }
 
-.map-popup__link {
-    display: inline-block;
-    margin-top: .6rem;
-    font-size: .75rem;
-    font-weight: 700;
-    color: var(--cita-navy);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-
 /* Leaflet fuerza .leaflet-container a { color: #0078A8 }: devolvemos el navy de la página. */
-.leaflet-container .map-popup a,
-.leaflet-container .map-popup__link {
+.leaflet-container .map-popup a {
     color: var(--cita-navy);
 }
 
