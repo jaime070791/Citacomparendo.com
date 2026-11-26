@@ -254,6 +254,7 @@ a {
 .hero__panel {
     background-color: var(--cita-navy-deep);
     padding: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 4vw, 3.25rem);
+    text-align: center;
 }
 
 .hero__title {
@@ -290,6 +291,13 @@ a {
     --animate-duration: 2s;
 }
 
+.hero__conductores {
+    font-size: .85rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, .72);
+    margin: .55rem 0 0;
+}
+
 .hero__rating-line {
     display: inline-block;
     width: 74px;
@@ -297,6 +305,11 @@ a {
     background-color: var(--cita-yellow);
     vertical-align: middle;
     margin-left: .75rem;
+}
+
+.hero__rating-line--left {
+    margin-left: 0;
+    margin-right: .75rem;
 }
 
 .hero__aside {
@@ -321,8 +334,13 @@ a {
 }
 
 .hero__partners img {
-    height: 26px;
+    height: 42px;
     width: auto;
+}
+
+/* El PNG de SIMIT incluye puntos arriba/abajo: necesita más altura para verse como el diseño. */
+.hero__partners .hero__partner--simit {
+    height: 64px;
 }
 
 /* ==========================================================================
@@ -846,15 +864,8 @@ button.testimonial-card__icon {
     color: var(--cita-white);
 }
 
-.site-footer__logo-chip {
-    display: inline-block;
-    padding: .55rem .85rem;
-    background-color: var(--cita-white);
-    border-radius: 14px;
-}
-
 .site-footer__logo {
-    height: 56px;
+    height: clamp(96px, 12vw, 150px);
     width: auto;
     display: block;
 }
@@ -902,8 +913,20 @@ button.testimonial-card__icon {
 }
 
 .site-footer__logos img {
-    height: 34px;
+    height: 30px;
     width: auto;
+    background-color: transparent;
+    border-radius: 0;
+    padding: 0;
+}
+
+.site-footer__logos .site-footer__logo--simit {
+    height: 54px;
+}
+
+/* RUNT va sobre chip blanco, como en el diseño. */
+.site-footer__logos .site-footer__logo--runt {
+    height: 34px;
     background-color: var(--cita-white);
     border-radius: 4px;
     padding: 4px 6px;

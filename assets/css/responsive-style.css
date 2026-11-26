@@ -5,10 +5,41 @@
    Convención desktop-first (max-width), igual que la plantilla koraltec.
    ========================================================================== */
 
+/* ---------- 1399px ---------- */
+@media (max-width: 1399.98px) {
+    .hero__rating-line {
+        width: 40px;
+    }
+}
+
 /* ---------- 1199px ---------- */
 @media (max-width: 1199.98px) {
     .hero__title {
         font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+    }
+
+    .hero__rating-line {
+        display: none;
+    }
+
+    .hero__partners img {
+        height: 32px;
+    }
+
+    .hero__partners .hero__partner--simit {
+        height: 52px;
+    }
+
+    .site-footer__logos img {
+        height: 26px;
+    }
+
+    .site-footer__logos .site-footer__logo--simit {
+        height: 46px;
+    }
+
+    .site-footer__logos .site-footer__logo--runt {
+        height: 30px;
     }
 
     .banner__title {
@@ -97,6 +128,14 @@
         margin-bottom: 1.75rem;
     }
 
+    .hero__partners img {
+        height: 28px;
+    }
+
+    .hero__partners .hero__partner--simit {
+        height: 44px;
+    }
+
     .sedes__tabs {
         border-radius: 18px;
         width: 100%;
@@ -160,7 +199,19 @@
     }
 
     .site-footer__logos img {
-        height: 28px;
+        height: 24px;
+    }
+
+    .site-footer__logos .site-footer__logo--simit {
+        height: 42px;
+    }
+
+    .hero__partners img {
+        height: 24px;
+    }
+
+    .hero__partners .hero__partner--simit {
+        height: 38px;
     }
 
     .map {
