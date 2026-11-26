@@ -219,7 +219,7 @@ if (null !== $lat && null !== $lng) {
                         data-zoom="15"
                         data-nombre="<?php echo esc_attr($sede['nombre']); ?>"
                         data-direccion="<?php echo esc_attr($sede['direccion']); ?>"
-                        data-pin-red="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'elements/pin-red.svg'); ?>">
+                        data-pin="<?php echo esc_url(CITA_COMPARENDO_IMG_URI . 'elements/pin.svg?ver=' . cita_comparendo_asset_version('/assets/images/elements/pin.svg')); ?>">
                         <div class="map__fallback d-flex flex-column align-items-center justify-content-center text-navy text-center px-3"
                             id="mapa-sede-fallback">
                             <i class="fa-solid fa-map-location-dot fs-4 mb-2" aria-hidden="true"></i>

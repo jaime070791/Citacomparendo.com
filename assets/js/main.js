@@ -202,6 +202,10 @@
         construirZonas();
         aplicarFiltro();
 
+        if (mapa) {
+            mapa.encuadrar(cards);
+        }
+
         if (scroll) {
             scroll.addEventListener('scroll', actualizarScroll, { passive: true });
         }
@@ -272,7 +276,7 @@
                 if (origen === 'ciudad') {
                     centrarCiudad(visibles);
                 }
-                if (origen === 'zona' || origen === 'cercade') {
+                if (origen === 'zona' || origen === 'cercade' || origen === 'todas') {
                     mapa.encuadrar(visibles);
                 }
                 if (estado.zona !== 'cercade') {
@@ -287,7 +291,11 @@
             }
 
             if (estado.ciudad === 'todas' || !select) {
-                mapa.centrar(mapa.centro.lat, mapa.centro.lng, mapa.centro.zoom);
+                if (visibles.length) {
+                    mapa.encuadrar(visibles);
+                } else {
+                    mapa.centrar(mapa.centro.lat, mapa.centro.lng, mapa.centro.zoom);
+                }
                 return;
             }
 
@@ -694,14 +702,10 @@
 
             var tamano = [32, 46];
             var ancla = [16, 45];
-            var azul = contenedor.getAttribute('data-pin-blue');
-            var rojo = contenedor.getAttribute('data-pin-red');
+            var pin = contenedor.getAttribute('data-pin');
 
-            var iconoAzul = azul
-                ? L.icon({ iconUrl: azul, iconSize: tamano, iconAnchor: ancla, popupAnchor: [0, -38] })
-                : new L.Icon.Default();
-            var iconoRojo = rojo
-                ? L.icon({ iconUrl: rojo, iconSize: tamano, iconAnchor: ancla, popupAnchor: [0, -38] })
+            var icono = pin
+                ? L.icon({ iconUrl: pin, iconSize: tamano, iconAnchor: ancla, popupAnchor: [0, -38] })
                 : new L.Icon.Default();
 
             var capa = L.layerGroup().addTo(map);
@@ -711,11 +715,11 @@
 
             marcadores.forEach(function (item) {
                 item.marker = L.marker([item.lat, item.lng], {
-                    icon: iconoAzul,
+                    icon: icono,
                     title: item.card.getAttribute('data-nombre') || '',
                     alt: item.card.getAttribute('data-nombre') || ''
                 });
-                item.marker.bindPopup(popupDe(item.card), { maxWidth: 280 });
+                item.marker.bindPopup(popupDe(item.card), { maxWidth: 300, minWidth: 250 });
                 item.marker.on('click', function () {
                     activarCard(item.card, false);
                 });
@@ -749,7 +753,6 @@
                     activa = card;
 
                     marcadores.forEach(function (item) {
-                        item.marker.setIcon(item.card === activa ? iconoRojo : iconoAzul);
                         item.marker.setZIndexOffset(item.card === activa ? 1000 : 0);
                     });
 
@@ -824,23 +827,52 @@
             var horario = card.getAttribute('data-horario') || '';
             var lat = coordenada(card.getAttribute('data-lat'));
             var lng = coordenada(card.getAttribute('data-lng'));
-            var html = '<strong>' + escapar(nombre) + '</strong>';
+            var url = card.getAttribute('data-url') || '';
+            var agendar = card.querySelector('.sede-agendar');
+
+            var html = '<div class="map-popup">';
+            html += '<h3 class="map-popup__title">' + escapar(nombre) + '</h3>';
 
             if (direccion) {
-                html += '<br>' + escapar(direccion);
+                html += '<p class="map-popup__meta">' + escapar(direccion) + '</p>';
             }
             if (horario) {
-                html += '<br>' + escapar(horario);
-            }
-            if (lat !== null && lng !== null) {
-                html += '<br><a class="map-popup__link" href="https://www.google.com/maps/dir/?api=1&destination=' +
-                    lat + ',' + lng + '" target="_blank" rel="noopener">Cómo llegar</a>';
+                html += '<p class="map-popup__meta">' + escapar(horario) + '</p>';
             }
 
-            var url = card.getAttribute('data-url') || '';
-            if (url) {
-                html += '<br><a class="map-popup__link" href="' + escapar(url) + '">Ver ficha de la sede</a>';
+            var tieneComoLlegar = lat !== null && lng !== null;
+            var tieneAgendar = Boolean(agendar);
+
+            if (tieneComoLlegar || tieneAgendar) {
+                var colAccion = (tieneComoLlegar && tieneAgendar) ? 'col-6' : 'col-12';
+
+                html += '<div class="map-popup__actions row g-2 mx-0 align-items-center mt-2">';
+
+                if (tieneComoLlegar) {
+                    html += '<div class="' + colAccion + '">' +
+                        '<a class="btn map-popup__btn map-popup__btn--secundario w-100" ' +
+                        'href="https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng + '" ' +
+                        'target="_blank" rel="noopener">Cómo llegar</a>' +
+                        '</div>';
+                }
+
+                if (tieneAgendar) {
+                    html += '<div class="' + colAccion + '">' +
+                        '<button type="button" class="btn map-popup__btn map-popup__btn--primario w-100 sede-agendar" ' +
+                        'sede="' + escapar(agendar.getAttribute('sede') || '') + '" ' +
+                        'data-bs-toggle="modal" data-bs-target="' +
+                        escapar(agendar.getAttribute('data-bs-target') || '') + '">Agendar</button>' +
+                        '</div>';
+                }
+
+                html += '</div>';
             }
+
+            if (url) {
+                html += '<a class="map-popup__link" href="' + escapar(url) + '">Ver ficha de la sede</a>';
+            }
+
+            html += '</div>';
 
             return html;
         }
@@ -876,9 +908,9 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
-        var rojo = contenedor.getAttribute('data-pin-red');
-        var icono = rojo
-            ? L.icon({ iconUrl: rojo, iconSize: [32, 46], iconAnchor: [16, 45], popupAnchor: [0, -38] })
+        var pin = contenedor.getAttribute('data-pin');
+        var icono = pin
+            ? L.icon({ iconUrl: pin, iconSize: [32, 46], iconAnchor: [16, 45], popupAnchor: [0, -38] })
             : new L.Icon.Default();
 
         var nombre = contenedor.getAttribute('data-nombre') || '';

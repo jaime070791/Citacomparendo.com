@@ -1413,6 +1413,12 @@ button.testimonial-card__icon {
     transition: background-color .2s ease, color .2s ease, border-color .2s ease;
 }
 
+/* Cada botón llena su mitad: el padding no define el ancho, solo deja caber el texto. */
+#sedes-lista .sede-card .sede-card__btn,
+#sedes-lista .sede-card .sede-card__btn-secundario {
+    --bs-btn-padding-x: .5rem;
+}
+
 .sede-card .sede-card__btn:hover,
 .sede-card .sede-card__btn:focus-visible {
     background-color: var(--cita-navy);
@@ -1450,17 +1456,80 @@ button.testimonial-card__icon {
     text-align: center;
 }
 
-.map-popup__link {
-    font-weight: 700;
-    color: var(--cita-navy);
+/* Popup del mapa con el lenguaje visual de la landing. */
+.leaflet-container .leaflet-popup-content-wrapper {
+    border-radius: var(--cita-radius-sm);
+    box-shadow: var(--cita-shadow);
 }
 
 .leaflet-container .leaflet-popup-content {
-    line-height: 1.5;
+    margin: .9rem 1rem 1rem;
+    font-family: var(--cita-font-body);
+    color: var(--cita-navy-soft);
+    line-height: 1.45;
 }
 
-.leaflet-container .leaflet-popup-content strong {
+.map-popup__title {
     font-family: var(--cita-font-heading);
+    font-size: .95rem;
+    font-weight: 800;
+    color: var(--cita-navy);
+    margin-bottom: .4rem;
+}
+
+.map-popup__meta {
+    margin: 0 0 .2rem;
+    font-size: .8rem;
+    overflow-wrap: anywhere;
+}
+
+.map-popup__btn {
+    --bs-btn-padding-y: .4rem;
+    --bs-btn-padding-x: .75rem;
+    --bs-btn-font-size: .72rem;
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-width: 2px;
+    --bs-btn-border-radius: 50rem;
+    line-height: 1.2;
+}
+
+.map-popup__btn--secundario {
+    --bs-btn-color: var(--cita-navy);
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: var(--cita-navy);
+    --bs-btn-hover-bg: var(--cita-yellow);
+    --bs-btn-hover-color: var(--cita-navy);
+    --bs-btn-hover-border-color: var(--cita-yellow);
+    --bs-btn-active-bg: var(--cita-yellow-hover);
+    --bs-btn-active-color: var(--cita-navy);
+    --bs-btn-active-border-color: var(--cita-yellow-hover);
+}
+
+.map-popup__btn--primario {
+    --bs-btn-color: var(--cita-yellow);
+    --bs-btn-bg: var(--cita-navy);
+    --bs-btn-border-color: var(--cita-navy);
+    --bs-btn-hover-bg: var(--cita-yellow);
+    --bs-btn-hover-color: var(--cita-navy);
+    --bs-btn-hover-border-color: var(--cita-yellow);
+    --bs-btn-active-bg: var(--cita-yellow-hover);
+    --bs-btn-active-color: var(--cita-navy);
+    --bs-btn-active-border-color: var(--cita-yellow-hover);
+}
+
+.map-popup__link {
+    display: inline-block;
+    margin-top: .6rem;
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--cita-navy);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* Leaflet fuerza .leaflet-container a { color: #0078A8 }: devolvemos el navy de la página. */
+.leaflet-container .map-popup a,
+.leaflet-container .map-popup__link {
     color: var(--cita-navy);
 }
 
