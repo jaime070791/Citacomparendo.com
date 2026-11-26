@@ -121,6 +121,29 @@
                 }
                 activarCard(card, true);
             });
+
+            var botonMapa = card.querySelector('.sede-mapa');
+            if (botonMapa) {
+                botonMapa.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    activarCard(card, true);
+
+                    var mapaEl = document.getElementById('mapa-sedes');
+                    if (!mapaEl) {
+                        return;
+                    }
+
+                    // En móvil/tablet el mapa queda debajo: se lleva a la vista.
+                    var rect = mapaEl.getBoundingClientRect();
+                    if (rect.top < 0 || rect.bottom > window.innerHeight) {
+                        mapaEl.scrollIntoView({
+                            behavior: reduceMotion ? 'auto' : 'smooth',
+                            block: 'center'
+                        });
+                    }
+                });
+            }
         });
 
         // La card destacada del HTML (o la primera) arranca como activa.

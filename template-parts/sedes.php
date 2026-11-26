@@ -311,25 +311,34 @@ $titulo_sedes = cita_field('sedes_titulo', 'Sedes y horarios');
 
                                 <span class="sede-card__dist" hidden></span>
 
-                                <?php if ($puede_agendar) : ?>
-                                    <button type="button"
-                                        class="btn sede-card__btn sede-agendar mt-auto align-self-start"
-                                        sede="<?php echo esc_attr($sede_crm); ?>"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="<?php echo esc_attr($modal_destino); ?>">
-                                        <?php esc_html_e('Agendar', 'cita-comparendo'); ?>
-                                    </button>
-                                <?php elseif (! empty($sede['activa'])) : ?>
-                                    <span class="sede-card__no-disponible mt-auto align-self-start">
-                                        <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                                        <?php esc_html_e('Próximamente', 'cita-comparendo'); ?>
-                                    </span>
-                                <?php else : ?>
-                                    <span class="sede-card__no-disponible mt-auto align-self-start">
-                                        <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                                        <?php esc_html_e('No disponible', 'cita-comparendo'); ?>
-                                    </span>
-                                <?php endif; ?>
+                                <div class="sede-card__acciones d-flex flex-wrap align-items-center gap-2 mt-auto">
+                                    <?php if ($puede_agendar) : ?>
+                                        <button type="button"
+                                            class="btn sede-card__btn sede-agendar"
+                                            sede="<?php echo esc_attr($sede_crm); ?>"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="<?php echo esc_attr($modal_destino); ?>">
+                                            <?php esc_html_e('Agendar', 'cita-comparendo'); ?>
+                                        </button>
+                                    <?php elseif (! empty($sede['activa'])) : ?>
+                                        <span class="sede-card__no-disponible">
+                                            <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                                            <?php esc_html_e('Próximamente', 'cita-comparendo'); ?>
+                                        </span>
+                                    <?php else : ?>
+                                        <span class="sede-card__no-disponible">
+                                            <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                                            <?php esc_html_e('No disponible', 'cita-comparendo'); ?>
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if ($tiene_ubicacion) : ?>
+                                        <button type="button" class="btn sede-card__btn-secundario sede-mapa">
+                                            <i class="fa-solid fa-map-location-dot me-1" aria-hidden="true"></i>
+                                            <?php esc_html_e('Ver en mapa', 'cita-comparendo'); ?>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </article>
                         </div>
                     <?php endforeach; ?>
