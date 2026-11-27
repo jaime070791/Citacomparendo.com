@@ -827,7 +827,6 @@
             var horario = card.getAttribute('data-horario') || '';
             var lat = coordenada(card.getAttribute('data-lat'));
             var lng = coordenada(card.getAttribute('data-lng'));
-            var url = card.getAttribute('data-url') || '';
             var agendar = card.querySelector('.sede-agendar');
 
             var html = '<div class="map-popup">';
@@ -866,10 +865,6 @@
                 }
 
                 html += '</div>';
-            }
-
-            if (url) {
-                html += '<a class="map-popup__link" href="' + escapar(url) + '">Ver ficha de la sede</a>';
             }
 
             html += '</div>';
